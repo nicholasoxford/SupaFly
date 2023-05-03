@@ -13,5 +13,8 @@
     "turbo": "latest"
   },
   "packageManager": "pnpm@7.15.0",
-  "name": "supabased"
+  "name": "supabased",
+  "dependencies": {
+    "@inquirer/prompts": "^1.0.0"
+  }
 }
