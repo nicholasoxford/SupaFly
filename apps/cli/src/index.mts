@@ -1,12 +1,16 @@
-import { spawn, exec, ChildProcessWithoutNullStreams } from "child_process";
+import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import figlet from "figlet";
 import { Command, OptionValues } from "commander";
 import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora, { Ora } from "ora";
 import fs from "fs";
+
+// Cool CLI font when starting CLI tool
 console.log(figlet.textSync("Supa", "Larry 3D"));
 console.log(figlet.textSync("Based", "Larry 3D"));
+
+// Create cli program helper and options
 const program = new Command();
 program
   .version("0.0.1")
@@ -18,7 +22,9 @@ program
   .parse(process.argv);
 const options = program.opts();
 
-takeoff();
+main();
+
+// Globally available info variable
 let info: cliInfo = {
   username: "",
   defaultRegion: "",
@@ -30,47 +36,30 @@ let info: cliInfo = {
     ipv6: "",
   },
 };
-async function takeoff() {
-  // create info object to pass around
 
-  const authSpinner = ora({
-    text: `Checking fly cli authorization...`,
-    color: "yellow",
-  }).start();
-
-  // grab username
-  info.username = await userAuth(options, authSpinner);
-  authSpinner.stop();
-  console.log("Deploying database as:", chalk.green(info.username));
+// takeoff function
+// Deploy supabase starter kit to fly.io
+async function main() {
+  // check if fly cli is authenticated
+  await flyAuth();
 
   // chose default region if not passed in
-  info.defaultRegion = options.region
-    ? options.region
-    : await choseDefaultRegions();
-  console.log("Deploying to region:", chalk.green(info.defaultRegion));
+  await flySetDefaultRegion();
 
   // set default org if passed in
-  // TODO: Prompt them with a list or orgs
-
-  info.organization = options.org ?? "personal";
-  console.log("Deploying to organization:", chalk.green(info.organization));
+  await flySetDefaultOrg();
 
   // turn our info object into default fly args
   const defaultArgs = getDefaultFlyArgs(info);
-  if (!options.dbUrl) {
-    // deploy database
-    await deployDatabase(defaultArgs);
-    console.log(chalk.green("You successfully deployed your database!"));
-  }
-  const spinner = ora({
-    text: `Checking if database was deployed correctly...`,
-    color: "yellow",
-  }).start();
 
-  spinner.stop();
+  // deploy database
+  await flySetDB(defaultArgs);
 
   // deploy api
   await deployMeta(defaultArgs);
+
+  // deploy postGREST
+  await deployPostgREST(defaultArgs);
 }
 
 // ---------------------------------------------
@@ -281,6 +270,18 @@ async function execAsyncLog(spawn: ChildProcessWithoutNullStreams) {
   return response;
 }
 
+async function flyAuth() {
+  const authSpinner = ora({
+    text: `Checking fly cli authorization...`,
+    color: "yellow",
+  }).start();
+
+  // grab username
+  info.username = await userAuth(options, authSpinner);
+  authSpinner.stop();
+  console.log("Deploying to fly.io as:", chalk.green(info.username));
+}
+
 async function flyLaunchDeployInternalIPV6(
   launchCommandArray: string[],
   path: string
@@ -293,6 +294,28 @@ async function flyLaunchDeployInternalIPV6(
   await allocatePrivateIPV6(path);
   await flyDeploy(path);
   return await getInternalIPV6Address(path);
+}
+
+async function flySetDefaultRegion() {
+  // chose default region if not passed in
+  info.defaultRegion = options.region
+    ? options.region
+    : await choseDefaultRegions();
+  console.log("Deploying to region:", chalk.green(info.defaultRegion));
+}
+
+async function flySetDefaultOrg() {
+  // TODO: Prompt them with a list or orgs
+  info.organization = options.org ?? "personal";
+  console.log("Deploying to organization:", chalk.green(info.organization));
+}
+
+async function flySetDB(defaultArgs: string[]) {
+  if (!options.dbUrl) {
+    // deploy database
+    await deployDatabase(defaultArgs);
+    console.log(chalk.green("You successfully deployed your database!"));
+  }
 }
 
 async function allocatePrivateIPV6(path: string) {
