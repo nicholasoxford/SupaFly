@@ -11,6 +11,7 @@ import { Command } from "commander";
 import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora from "ora";
+import fs from "fs";
 console.log(figlet.textSync("Supa", "Larry 3D"));
 console.log(figlet.textSync("Based", "Larry 3D"));
 const program = new Command();
@@ -145,7 +146,7 @@ async function deployMeta(userDefaultArgs) {
     // if we dont have a name passed in, we need to generate one
     const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
     // create array of commands
-    const metalaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    const metalaunchCommandArray = ["launch", "--internal-port", "8080"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
     // run fly launch --no-deploy to allocate app
     const metaLaunch = spawn("fly", metalaunchCommandArray, {
         cwd: "../pg-meta",
@@ -153,6 +154,22 @@ async function deployMeta(userDefaultArgs) {
     await execAsyncLog(metaLaunch);
     await allocatePrivateV6("../pg-meta");
     await flyDeploy("../pg-meta");
+    console.log("before spawn");
+    const copyHostFile = spawn("fly", ["ssh", "sftp", "get", "/etc/hosts", "./hosts"], {
+        cwd: "../pg-meta",
+    });
+    await execAsync(copyHostFile);
+    console.log("post getting file");
+    const hostFile = fs.readFileSync("../pg-meta/hosts", "utf8");
+    // Extract the IPv6 address before "fly-local-6pn"
+    const match = hostFile.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
+    if (match) {
+        const ipv6 = match[1];
+        console.log(ipv6); // Output the IPv6 address
+    }
+    else {
+        console.error("IPv6 address not found");
+    }
     console.log(chalk.blue("Deploying metadata"));
     return;
 }

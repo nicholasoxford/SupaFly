@@ -4,6 +4,7 @@ import { Command, OptionValues } from "commander";
 import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora, { Ora } from "ora";
+import fs from "fs";
 console.log(figlet.textSync("Supa", "Larry 3D"));
 console.log(figlet.textSync("Based", "Larry 3D"));
 const program = new Command();
@@ -18,14 +19,16 @@ program
 const options = program.opts();
 
 takeoff();
-
+let info: cliInfo = {
+  username: "",
+  defaultRegion: "",
+  organization: "",
+  pgMeta: {
+    ipv6: "",
+  },
+};
 async function takeoff() {
   // create info object to pass around
-  let info: cliInfo = {
-    username: "",
-    defaultRegion: "",
-    organization: "",
-  };
 
   const authSpinner = ora({
     text: `Checking fly cli authorization...`,
@@ -155,7 +158,7 @@ async function deployMeta(userDefaultArgs: string[]) {
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
 
   // create array of commands
-  const metalaunchCommandArray = ["launch"].concat(
+  const metalaunchCommandArray = ["launch", "--internal-port", "8080"].concat(
     launchDefaultArgs,
     userDefaultArgs,
     nameCommands
@@ -166,8 +169,9 @@ async function deployMeta(userDefaultArgs: string[]) {
     cwd: "../pg-meta",
   });
   await execAsyncLog(metaLaunch);
-  await allocatePrivateV6("../pg-meta");
+  await allocatePrivateIPV6("../pg-meta");
   await flyDeploy("../pg-meta");
+  info.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
   console.log(chalk.blue("Deploying metadata"));
   return;
 }
@@ -195,7 +199,7 @@ async function deployDatabase(userDefaultArgs: string[]) {
   const resp = await execAsync(dbLaunch);
   console.log(resp);
 
-  await allocatePrivateV6("../../packages/database");
+  await allocatePrivateIPV6("../../packages/database");
 
   // run fly deploy --remote-only to deploy db
   console.log(chalk.blue("Deploying database"));
@@ -241,7 +245,7 @@ async function execAsyncLog(spawn: ChildProcessWithoutNullStreams) {
   return response;
 }
 
-async function allocatePrivateV6(path: string) {
+async function allocatePrivateIPV6(path: string) {
   const ips = spawn("fly", ["ips", "allocate-v6", "--private"], {
     cwd: path,
   });
@@ -256,6 +260,27 @@ async function flyDeploy(path: string) {
   return await execAsyncLog(flyDeploy);
 }
 
+async function getInternalIPV6Address(path: string) {
+  const copyHostFile = spawn(
+    "fly",
+    ["ssh", "sftp", "get", "/etc/hosts", "./hosts"],
+    {
+      cwd: path,
+    }
+  );
+  await execAsync(copyHostFile);
+  const hostFile = fs.readFileSync("./hosts", "utf8");
+  // Extract the IPv6 address before "fly-local-6pn"
+  const match = hostFile.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
+  let ipv6 = "";
+  if (match) {
+    ipv6 = match[1];
+  } else {
+    console.error("IPv6 address not found");
+  }
+  return ipv6;
+}
+
 const launchDefaultArgs = [
   "--no-deploy",
   "--copy-config",
@@ -267,4 +292,7 @@ type cliInfo = {
   username: string;
   defaultRegion: string;
   organization: string;
+  pgMeta: {
+    ipv6: string;
+  };
 };

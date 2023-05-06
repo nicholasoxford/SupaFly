@@ -7,8 +7,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.mjs",
-    "skip": "npx tsc && node dist/index.mjs -y -r atl --org personal --dbUrl 123",
-    
+    "skip": "npx tsc && node dist/index.mjs -y -r lax --org personal --dbUrl 123",
     "dev": "npx tsc-watch --onSuccess \"node ./dist/index.mjs\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
