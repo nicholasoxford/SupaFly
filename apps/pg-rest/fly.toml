@@ -1,0 +1,7 @@
+# fly.toml app configuration file generated for supa-post on 2023-05-01T15:58:07-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "supa-post"
+primary_region = "lax"

@@ -26,6 +26,9 @@ let info: cliInfo = {
   pgMeta: {
     ipv6: "",
   },
+  pgRest: {
+    ipv6: "",
+  },
 };
 async function takeoff() {
   // create info object to pass around
@@ -148,31 +151,64 @@ async function choseDefaultRegions() {
   });
 }
 
-async function deployMeta(userDefaultArgs: string[]) {
-  const metaName = await input({
-    message:
-      "Enter a name for your postgres metadata instance, or leave blank for a generated one",
-  });
+//
+// Fly io specific functions
 
+//Deploying postgres-meta
+async function deployMeta(userDefaultArgs: string[]) {
+  console.log(chalk.blue("Deploying metadata"));
+  let metaName;
+  if (!options.yes) {
+    metaName = await input({
+      message:
+        "Enter a name for your postgres metadata instance, or leave blank for a generated one",
+    });
+  }
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
 
   // create array of commands
-  const metalaunchCommandArray = ["launch", "--internal-port", "8080"].concat(
+  const metalaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
     userDefaultArgs,
     nameCommands
   );
 
   // run fly launch --no-deploy to allocate app
-  const metaLaunch = spawn("fly", metalaunchCommandArray, {
-    cwd: "../pg-meta",
-  });
-  await execAsyncLog(metaLaunch);
-  await allocatePrivateIPV6("../pg-meta");
-  await flyDeploy("../pg-meta");
-  info.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
+  info.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
+    metalaunchCommandArray,
+    "../pg-meta"
+  );
+  return;
+}
+
+//Deploying postgresT
+async function deployPostgREST(userDefaultArgs: string[]) {
   console.log(chalk.blue("Deploying metadata"));
+  let postgrestName;
+  if (!options.yes) {
+    postgrestName = await input({
+      message:
+        "Enter a name for your postgres metadata instance, or leave blank for a generated one",
+    });
+  }
+  // if we dont have a name passed in, we need to generate one
+  const nameCommands = postgrestName
+    ? ["--name", postgrestName]
+    : ["--generate-name"];
+
+  // create array of commands
+  const metalaunchCommandArray = ["launch"].concat(
+    launchDefaultArgs,
+    userDefaultArgs,
+    nameCommands
+  );
+
+  // run fly launch --no-deploy to allocate app
+  info.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
+    metalaunchCommandArray,
+    "../pg-rest"
+  );
   return;
 }
 
@@ -245,6 +281,20 @@ async function execAsyncLog(spawn: ChildProcessWithoutNullStreams) {
   return response;
 }
 
+async function flyLaunchDeployInternalIPV6(
+  launchCommandArray: string[],
+  path: string
+) {
+  // run fly launch --no-deploy to allocate app
+  const metaLaunch = spawn("fly", launchCommandArray, {
+    cwd: path,
+  });
+  await execAsyncLog(metaLaunch);
+  await allocatePrivateIPV6(path);
+  await flyDeploy(path);
+  return await getInternalIPV6Address(path);
+}
+
 async function allocatePrivateIPV6(path: string) {
   const ips = spawn("fly", ["ips", "allocate-v6", "--private"], {
     cwd: path,
@@ -292,7 +342,11 @@ type cliInfo = {
   username: string;
   defaultRegion: string;
   organization: string;
-  pgMeta: {
-    ipv6: string;
-  };
+  pgMeta: serviceInfo;
+  pgRest: serviceInfo;
+};
+
+type serviceInfo = {
+  name?: string;
+  ipv6: string;
 };
