@@ -5,11 +5,9 @@ import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora, { Ora } from "ora";
 import fs from "fs";
+import njwt from "njwt";
 
-// Cool CLI font when starting CLI tool
-console.log(figlet.textSync("Supa", "Larry 3D"));
-console.log(figlet.textSync("Based", "Larry 3D"));
-
+import secureRandom from "secure-random";
 // Create cli program helper and options
 const program = new Command();
 program
@@ -22,26 +20,39 @@ program
   .parse(process.argv);
 const options = program.opts();
 
-main();
+// Cool CLI font when starting CLI tool
+console.log(figlet.textSync("Supa", "Larry 3D"));
+console.log(figlet.textSync("Based", "Larry 3D"));
 
 // Globally available info variable
 let info: cliInfo = {
   username: "",
   defaultRegion: "",
   organization: "",
+  jwtTokens: {
+    anonToken: "",
+    serviceToken: "",
+  },
   pgMeta: {
     ipv6: "",
   },
   pgRest: {
     ipv6: "",
   },
+  pgAuth: {
+    ipv6: "",
+  },
 };
+
+main();
 
 // takeoff function
 // Deploy supabase starter kit to fly.io
 async function main() {
   // check if fly cli is authenticated
   await flyAuth();
+
+  generateSupaJWTs();
 
   // chose default region if not passed in
   await flySetDefaultRegion();
@@ -60,6 +71,7 @@ async function main() {
 
   // deploy postGREST
   await deployPostgREST(defaultArgs);
+  console.log(info);
 }
 
 // ---------------------------------------------
@@ -173,12 +185,12 @@ async function deployMeta(userDefaultArgs: string[]) {
 
 //Deploying postgresT
 async function deployPostgREST(userDefaultArgs: string[]) {
-  console.log(chalk.blue("Deploying metadata"));
+  console.log(chalk.blue("Deploying postgREST"));
   let postgrestName;
   if (!options.yes) {
     postgrestName = await input({
       message:
-        "Enter a name for your postgres metadata instance, or leave blank for a generated one",
+        "Enter a name for your postgREST instance, or leave blank for a generated one",
     });
   }
   // if we dont have a name passed in, we need to generate one
@@ -287,10 +299,10 @@ async function flyLaunchDeployInternalIPV6(
   path: string
 ) {
   // run fly launch --no-deploy to allocate app
-  const metaLaunch = spawn("fly", launchCommandArray, {
+  const launchCommand = spawn("fly", launchCommandArray, {
     cwd: path,
   });
-  await execAsyncLog(metaLaunch);
+  await execAsyncLog(launchCommand);
   await allocatePrivateIPV6(path);
   await flyDeploy(path);
   return await getInternalIPV6Address(path);
@@ -333,17 +345,21 @@ async function flyDeploy(path: string) {
   return await execAsyncLog(flyDeploy);
 }
 
-async function getInternalIPV6Address(path: string) {
+async function getInternalIPV6Address(projPath: string) {
+  console.log(chalk.blue("Getting internal ipv6 address"));
   const copyHostFile = spawn(
     "fly",
     ["ssh", "sftp", "get", "/etc/hosts", "./hosts"],
     {
-      cwd: path,
+      cwd: projPath,
     }
   );
-  await execAsync(copyHostFile);
-  const hostFile = fs.readFileSync("./hosts", "utf8");
+  await execAsyncLog(copyHostFile);
+  const hostPath = projPath + "/hosts";
+  console.log("hostPath", hostPath);
+  const hostFile = fs.readFileSync(hostPath, "utf8");
   // Extract the IPv6 address before "fly-local-6pn"
+  console.log("hostFile", hostFile);
   const match = hostFile.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
   let ipv6 = "";
   if (match) {
@@ -352,6 +368,25 @@ async function getInternalIPV6Address(path: string) {
     console.error("IPv6 address not found");
   }
   return ipv6;
+}
+
+function generateSupaJWTs() {
+  var signingKey = secureRandom(256, { type: "Buffer" });
+  const anonClaims = {
+    role: "anon",
+    iss: "supabase",
+  };
+  const serviceClaims = {
+    role: "service_role",
+    iss: "supabase",
+  };
+
+  info.jwtTokens.anonToken = njwt.create(anonClaims, signingKey).compact();
+  info.jwtTokens.serviceToken = njwt
+    .create(serviceClaims, signingKey)
+    .compact();
+
+  return;
 }
 
 const launchDefaultArgs = [
@@ -367,6 +402,11 @@ type cliInfo = {
   organization: string;
   pgMeta: serviceInfo;
   pgRest: serviceInfo;
+  jwtTokens: {
+    anonToken: string;
+    serviceToken: string;
+  };
+  pgAuth: serviceInfo;
 };
 
 type serviceInfo = {

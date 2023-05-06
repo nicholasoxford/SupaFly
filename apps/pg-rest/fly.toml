@@ -1,7 +1,11 @@
-# fly.toml app configuration file generated for supa-post on 2023-05-01T15:58:07-06:00
+# fly.toml app configuration file generated for red-sun-5423 on 2023-05-06T07:43:57-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "supa-post"
+app = "red-sun-5423"
 primary_region = "lax"
+
+[http_service]
+  internal_port = 3000
+  force_https = true

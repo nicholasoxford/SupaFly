@@ -13,6 +13,11 @@ COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/dist dist
 COPY package.json ./
 ENV PG_META_PORT=8080
+ENV PG_META_HOST="fly-local-6pn" \
+    PG_META_DB_HOST="[fdaa:0:58df:a7b:2984:dff:e171:2]" \
+    PG_META_DB_PORT=5432 \
+    PG_META_DB_NAME=postgres \
+    PG_META_DB_PASSWORD=password
 ENV PG_META_HOST="fly-local-6pn"
 CMD ["npm", "run", "start", "--", "-H", "fly-local-6pn"]
 EXPOSE 8080

@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for wild-morning-8071 on 2023-05-05T23:12:45-06:00
+# fly.toml app configuration file generated for wandering-river-240 on 2023-05-06T07:42:34-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "wild-morning-8071"
+app = "wandering-river-240"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
