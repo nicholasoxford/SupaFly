@@ -1,0 +1,13 @@
+# fly.toml app configuration file generated for testfr on 2023-05-03T21:34:14-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "testfr"
+primary_region = "syd"
+
+[http_service]
+  internal_port = 5432
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true

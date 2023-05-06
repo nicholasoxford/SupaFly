@@ -1,0 +1,13 @@
+# fly.toml app configuration file generated for billowing-glitter-8322 on 2023-05-05T20:39:13-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "billowing-glitter-8322"
+primary_region = "atl"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[http_service]
+  internal_port = 8080
+  force_https = true

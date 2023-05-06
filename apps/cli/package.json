@@ -7,6 +7,8 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.mjs",
+    "skip": "npx tsc && node dist/index.mjs -y -r atl --org personal --dbUrl 123",
+    
     "dev": "npx tsc-watch --onSuccess \"node ./dist/index.mjs\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,6 +26,7 @@
     "inquirer": "^9.2.0",
     "inversify": "^6.0.1",
     "kleur": "^4.1.5",
+    "ora": "^6.3.0",
     "reflect-metadata": "^0.1.13",
     "tslib": "^2.5.0"
   },
