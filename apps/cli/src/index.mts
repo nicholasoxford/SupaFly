@@ -4,7 +4,6 @@ import { Command, OptionValues } from "commander";
 import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora, { Ora } from "ora";
-import fs from "fs";
 import njwt from "njwt";
 import secureRandom from "secure-random";
 import { readFile, writeFile } from "fs/promises";
@@ -49,12 +48,12 @@ let globalInfo: cliInfo = {
 
 main();
 
-// takeoff function
 // Deploy supabase starter kit to fly.io
 async function main() {
   // check if fly cli is authenticated
   await flyAuth();
 
+  // generate service and anon tokens
   generateSupaJWTs();
 
   // chose default region if not passed in
@@ -67,17 +66,13 @@ async function main() {
   const defaultArgs = getDefaultFlyArgs(globalInfo);
 
   // deploy database
-  await flySetDB(defaultArgs);
-
-  // update authenticator and auth in postgres
-  await updateFlyDBRoles("../../packages/database");
+  await flyDeployAndPrepareDB(defaultArgs);
 
   // deploy api
-  await deployMeta(defaultArgs);
+  await deployPGMeta(defaultArgs);
 
   // deploy postGREST
-  await deployPostgREST(defaultArgs);
-  console.log(globalInfo);
+  await deployPGREST(defaultArgs);
 }
 
 // ---------------------------------------------
@@ -160,7 +155,7 @@ async function choseDefaultRegions() {
 
 // Fly io specific functions
 //Deploying postgres-meta
-async function deployMeta(userDefaultArgs: string[]) {
+async function deployPGMeta(userDefaultArgs: string[]) {
   console.log(chalk.blue("Deploying metadata"));
   let metaName;
   if (!options.yes) {
@@ -212,7 +207,7 @@ async function updateFlyDBRoles(path: string) {
 }
 
 //Deploying postgresT
-async function deployPostgREST(userDefaultArgs: string[]) {
+async function deployPGREST(userDefaultArgs: string[]) {
   console.log(chalk.blue("Deploying postgREST"));
   let postgrestName;
   if (!options.yes) {
@@ -270,6 +265,8 @@ async function deployDatabase(userDefaultArgs: string[]) {
   await flyDeploy(dbPath);
   await scaleMemoryFly(dbPath, 1024);
   // wait 2 seconds for the database to start
+  setTimeout(() => {}, 2000);
+  await updateFlyDBRoles(dbPath);
   setTimeout(() => {}, 2000);
   return await getInternalIPV6Address(dbPath);
 }
@@ -375,7 +372,7 @@ async function flySetDefaultOrg() {
   );
 }
 
-async function flySetDB(defaultArgs: string[]) {
+async function flyDeployAndPrepareDB(defaultArgs: string[]) {
   if (!options.dbUrl) {
     // deploy database
     globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
