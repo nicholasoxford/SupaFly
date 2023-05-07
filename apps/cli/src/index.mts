@@ -6,8 +6,8 @@ import chalk from "chalk";
 import ora, { Ora } from "ora";
 import fs from "fs";
 import njwt from "njwt";
-
 import secureRandom from "secure-random";
+import { readFile, writeFile } from "fs/promises";
 // Create cli program helper and options
 const program = new Command();
 program
@@ -25,7 +25,7 @@ console.log(figlet.textSync("Supa", "Larry 3D"));
 console.log(figlet.textSync("Based", "Larry 3D"));
 
 // Globally available info variable
-let info: cliInfo = {
+let globalInfo: cliInfo = {
   username: "",
   defaultRegion: "",
   organization: "",
@@ -40,6 +40,9 @@ let info: cliInfo = {
     ipv6: "",
   },
   pgAuth: {
+    ipv6: "",
+  },
+  database: {
     ipv6: "",
   },
 };
@@ -61,17 +64,20 @@ async function main() {
   await flySetDefaultOrg();
 
   // turn our info object into default fly args
-  const defaultArgs = getDefaultFlyArgs(info);
+  const defaultArgs = getDefaultFlyArgs(globalInfo);
 
   // deploy database
   await flySetDB(defaultArgs);
+
+  // update authenticator and auth in postgres
+  await updateFlyDBRoles("../../packages/database");
 
   // deploy api
   await deployMeta(defaultArgs);
 
   // deploy postGREST
   await deployPostgREST(defaultArgs);
-  console.log(info);
+  console.log(globalInfo);
 }
 
 // ---------------------------------------------
@@ -152,9 +158,7 @@ async function choseDefaultRegions() {
   });
 }
 
-//
 // Fly io specific functions
-
 //Deploying postgres-meta
 async function deployMeta(userDefaultArgs: string[]) {
   console.log(chalk.blue("Deploying metadata"));
@@ -167,7 +171,10 @@ async function deployMeta(userDefaultArgs: string[]) {
   }
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
-
+  await updatePGMetaDockerFilePGHost(
+    "../pg-meta/Dockerfile",
+    globalInfo.database.ipv6
+  );
   // create array of commands
   const metalaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
@@ -176,11 +183,32 @@ async function deployMeta(userDefaultArgs: string[]) {
   );
 
   // run fly launch --no-deploy to allocate app
-  info.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
+  globalInfo.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
     metalaunchCommandArray,
     "../pg-meta"
   );
   return;
+}
+
+async function updateFlyDBRoles(path: string) {
+  const psqlCommand1 = `psql postgres://supabase_admin:password@localhost:5432/postgres -c "ALTER ROLE authenticator WITH PASSWORD 'password';"`;
+  const psqlCommand2 = `psql postgres://supabase_admin:password@localhost:5432/postgres -c "ALTER ROLE supabase_auth_admin WITH PASSWORD 'password';"`;
+  const flyProcess1 = spawn(
+    "fly",
+    ["ssh", "console", "--command", psqlCommand1],
+    {
+      cwd: path,
+    }
+  );
+  const flyProcess2 = spawn(
+    "fly",
+    ["ssh", "console", "--command", psqlCommand2],
+    {
+      cwd: path,
+    }
+  );
+  await execAsyncLog(flyProcess1);
+  await execAsyncLog(flyProcess2);
 }
 
 //Deploying postgresT
@@ -206,7 +234,7 @@ async function deployPostgREST(userDefaultArgs: string[]) {
   );
 
   // run fly launch --no-deploy to allocate app
-  info.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
+  globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
     metalaunchCommandArray,
     "../pg-rest"
   );
@@ -214,11 +242,14 @@ async function deployPostgREST(userDefaultArgs: string[]) {
 }
 
 async function deployDatabase(userDefaultArgs: string[]) {
-  const dbName = await input({
-    message:
-      "Enter a name for your database, or leave blank for a generated one",
-  });
-
+  let dbName;
+  const dbPath = "../../packages/database";
+  if (!options.yes) {
+    dbName = await input({
+      message:
+        "Enter a name for your database, or leave blank for a generated one",
+    });
+  }
   // if we dont have a name passed in, we need to generate one
   const nameCommands = dbName ? ["--name", dbName] : ["--generate-name"];
 
@@ -231,23 +262,42 @@ async function deployDatabase(userDefaultArgs: string[]) {
 
   // run fly launch --no-deploy to allocate app
   const dbLaunch = spawn("fly", launchCommandArray, {
-    cwd: "../../packages/database",
+    cwd: dbPath,
   });
-  const resp = await execAsync(dbLaunch);
-  console.log(resp);
+  await execAsync(dbLaunch);
+  await allocatePrivateIPV6(dbPath);
+  await createFlyVolume(dbPath);
+  await flyDeploy(dbPath);
+  await scaleMemoryFly(dbPath, 1024);
+  // wait 2 seconds for the database to start
+  setTimeout(() => {}, 2000);
+  return await getInternalIPV6Address(dbPath);
+}
 
-  await allocatePrivateIPV6("../../packages/database");
+async function createFlyVolume(path: string) {
+  const command = "fly";
+  const args = [
+    "volumes",
+    "create",
+    "pg_data",
+    "--region",
+    "lax",
+    "--size",
+    "3",
+  ];
 
-  // run fly deploy --remote-only to deploy db
-  console.log(chalk.blue("Deploying database"));
-  const deployResp = await flyDeploy("../../packages/database");
-  const machine = spawn("fly", ["scale", "memory", "1024"], {
-    cwd: "../../packages/database",
+  const flyProcess = spawn(command, args, {
+    cwd: path,
+  });
+  await execAsyncLog(flyProcess);
+}
+
+async function scaleMemoryFly(path: string, memory: number) {
+  const machine = spawn("fly", ["scale", "memory", memory.toString()], {
+    cwd: path,
   });
 
   await execAsyncLog(machine);
-  console.log("db deploy: \n", deployResp);
-  return;
 }
 
 async function execAsync(spawn: ChildProcessWithoutNullStreams) {
@@ -289,9 +339,9 @@ async function flyAuth() {
   }).start();
 
   // grab username
-  info.username = await userAuth(options, authSpinner);
+  globalInfo.username = await userAuth(options, authSpinner);
   authSpinner.stop();
-  console.log("Deploying to fly.io as:", chalk.green(info.username));
+  console.log("Deploying to fly.io as:", chalk.green(globalInfo.username));
 }
 
 async function flyLaunchDeployInternalIPV6(
@@ -310,22 +360,25 @@ async function flyLaunchDeployInternalIPV6(
 
 async function flySetDefaultRegion() {
   // chose default region if not passed in
-  info.defaultRegion = options.region
+  globalInfo.defaultRegion = options.region
     ? options.region
     : await choseDefaultRegions();
-  console.log("Deploying to region:", chalk.green(info.defaultRegion));
+  console.log("Deploying to region:", chalk.green(globalInfo.defaultRegion));
 }
 
 async function flySetDefaultOrg() {
   // TODO: Prompt them with a list or orgs
-  info.organization = options.org ?? "personal";
-  console.log("Deploying to organization:", chalk.green(info.organization));
+  globalInfo.organization = options.org ?? "personal";
+  console.log(
+    "Deploying to organization:",
+    chalk.green(globalInfo.organization)
+  );
 }
 
 async function flySetDB(defaultArgs: string[]) {
   if (!options.dbUrl) {
     // deploy database
-    await deployDatabase(defaultArgs);
+    globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
     console.log(chalk.green("You successfully deployed your database!"));
   }
 }
@@ -349,18 +402,14 @@ async function getInternalIPV6Address(projPath: string) {
   console.log(chalk.blue("Getting internal ipv6 address"));
   const copyHostFile = spawn(
     "fly",
-    ["ssh", "sftp", "get", "/etc/hosts", "./hosts"],
+    ["ssh", "console", "--command", "cat etc/hosts"],
     {
       cwd: projPath,
     }
   );
-  await execAsyncLog(copyHostFile);
-  const hostPath = projPath + "/hosts";
-  console.log("hostPath", hostPath);
-  const hostFile = fs.readFileSync(hostPath, "utf8");
+  const result = await execAsync(copyHostFile);
   // Extract the IPv6 address before "fly-local-6pn"
-  console.log("hostFile", hostFile);
-  const match = hostFile.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
+  const match = result.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
   let ipv6 = "";
   if (match) {
     ipv6 = match[1];
@@ -368,6 +417,27 @@ async function getInternalIPV6Address(projPath: string) {
     console.error("IPv6 address not found");
   }
   return ipv6;
+}
+
+async function updatePGMetaDockerFilePGHost(
+  filePath: string,
+  newInternalAddress: string
+) {
+  try {
+    const data = await readFile(filePath, "utf8");
+
+    const regex = /PG_META_DB_HOST=".*"/g;
+    const newContent = data.replace(
+      regex,
+      `PG_META_DB_HOST="[${newInternalAddress}]"`
+    );
+
+    await writeFile(filePath, newContent, "utf8");
+
+    console.log("File updated successfully!");
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function generateSupaJWTs() {
@@ -381,8 +451,10 @@ function generateSupaJWTs() {
     iss: "supabase",
   };
 
-  info.jwtTokens.anonToken = njwt.create(anonClaims, signingKey).compact();
-  info.jwtTokens.serviceToken = njwt
+  globalInfo.jwtTokens.anonToken = njwt
+    .create(anonClaims, signingKey)
+    .compact();
+  globalInfo.jwtTokens.serviceToken = njwt
     .create(serviceClaims, signingKey)
     .compact();
 
@@ -407,6 +479,13 @@ type cliInfo = {
     serviceToken: string;
   };
   pgAuth: serviceInfo;
+  database: serviceInfo & {
+    hostname?: string;
+    port?: string;
+    username?: string;
+    password?: string;
+    databaseName?: string;
+  };
 };
 
 type serviceInfo = {

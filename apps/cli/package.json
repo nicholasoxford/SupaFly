@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.mjs",
-    "skip": "npx tsc && node dist/index.mjs -y -r lax --org personal --dbUrl 123",
+    "skip": "npx tsc && node dist/index.mjs -y -r lax --org supabased ",
     "dev": "npx tsc-watch --onSuccess \"node ./dist/index.mjs\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -27,6 +27,7 @@
     "kleur": "^4.1.5",
     "njwt": "^2.0.0",
     "ora": "^6.3.0",
+    "pg": "^8.7.1",
     "reflect-metadata": "^0.1.13",
     "secure-random": "^1.1.2",
     "tslib": "^2.5.0"
@@ -37,6 +38,7 @@
     "@types/inquirer": "^9.0.3",
     "@types/mute-stream": "^0.0.1",
     "@types/node": "^18.16.3",
+    "@types/pg": "^8.6.5",
     "@types/secure-random": "^1.1.0",
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.6",

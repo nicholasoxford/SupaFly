@@ -1,10 +1,11 @@
-# fly.toml app configuration file generated for testfr on 2023-05-03T21:34:14-06:00
+# fly.toml app configuration file generated for misty-sound-7067 on 2023-05-07T12:15:40-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "testfr"
-primary_region = "syd"
+app = "misty-sound-7067"
+primary_region = "lax"
+kill_timeout = "5m0s"
 
 [http_service]
   internal_port = 5432
