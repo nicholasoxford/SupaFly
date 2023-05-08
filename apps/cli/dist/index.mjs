@@ -13,7 +13,7 @@ import chalk from "chalk";
 import ora from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
-import { readFile, writeFile, appendFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import randomWords from "random-words";
 // Create cli program helper and options
 const program = new Command();
@@ -75,9 +75,8 @@ async function main() {
     // deploy postGREST
     await deployPGREST(defaultArgs);
     await deployAuth(defaultArgs);
-    console.log("globalInfo", globalInfo);
+    await deployCleanUp();
     await deployKong(defaultArgs);
-    console.log("post kong");
 }
 // ---------------------------------------------
 // You are enterning function forest
@@ -97,7 +96,6 @@ function getDefaultFlyArgs(args) {
 async function userAuth(options, spinner) {
     let username = await whoami();
     if (!username) {
-        console.log("Auhtoritizing with Fly.io");
         // async shell cmd
         await flyLogin();
         username = await whoami();
@@ -156,13 +154,16 @@ async function choseDefaultRegions() {
 // Fly io specific functions
 //Deploying postgres-meta
 async function deployPGMeta(userDefaultArgs) {
-    console.log(chalk.blue("Deploying metadata"));
     let metaName;
     if (!options.yes) {
         metaName = await input({
             message: "Enter a name for your postgres metadata instance, or leave blank for a generated one",
         });
     }
+    const metaSpinner = ora({
+        text: "Deploying metadata",
+        color: "yellow",
+    }).start();
     // if we dont have a name passed in, we need to generate one
     const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
     await updatePGMetaDockerFilePGHost("../pg-meta/Dockerfile", globalInfo.database.ipv6);
@@ -170,6 +171,8 @@ async function deployPGMeta(userDefaultArgs) {
     const metalaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
     // run fly launch --no-deploy to allocate app
     globalInfo.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(metalaunchCommandArray, "../pg-meta");
+    metaSpinner.stop();
+    console.log(chalk.green("Metadata deployed"));
     return;
 }
 async function updateFlyDBRoles(path) {
@@ -181,62 +184,81 @@ async function updateFlyDBRoles(path) {
     const flyProcess2 = spawn("fly", ["ssh", "console", "--command", psqlCommand2], {
         cwd: path,
     });
-    await execAsyncLog(flyProcess1);
-    await execAsyncLog(flyProcess2);
+    await execAsync(flyProcess1);
+    await execAsync(flyProcess2);
 }
 async function deployKong(userDefaultArgs) {
-    console.log(chalk.blue("Deploying Kong"));
     let kongName;
     if (!options.yes) {
         kongName = await input({
             message: "Enter a name for your Kong instance, or leave blank for a generated one",
         });
     }
+    const kongSpinner = ora({
+        text: "Deploying Kong",
+        color: "yellow",
+    }).start();
     // if we dont have a name passed in, we need to generate one
     const nameCommands = kongName ? ["--name", kongName] : ["--generate-name"];
     // create array of commands
     const kongLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
-    console.log("kongLaunchCommandArray", kongLaunchCommandArray);
     // run fly launch --no-deploy to allocate app
     await createkongYaml();
     globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(kongLaunchCommandArray, "../kong");
     await allocatePublicIPs("../kong");
+    kongSpinner.stop();
+    console.log(chalk.green("Kong deployed"));
     return;
 }
 //Deploying postgresT
 async function deployPGREST(userDefaultArgs) {
-    console.log(chalk.blue("Deploying postgREST"));
-    await updatepgRestEnvVars();
+    await updateFlyDBRoles("../../packages/database");
     let postgrestName;
     if (!options.yes) {
         postgrestName = await input({
             message: "Enter a name for your postgREST instance, or leave blank for a generated one",
         });
     }
+    const pgRestSpinner = ora({
+        text: "Deploying postgREST",
+        color: "yellow",
+    }).start();
     // if we dont have a name passed in, we need to generate one
     const nameCommands = postgrestName
         ? ["--name", postgrestName]
         : ["--generate-name"];
     // create array of commands
     const pgLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
-    console.log("pgLaunchCommandArray", pgLaunchCommandArray);
+    // create secrets
+    const secrets = {
+        PGRST_DB_URI: `postgres://authenticator:password@[${globalInfo.database.ipv6}]:5432/postgres`,
+        PGRST_DB_ANON_ROLE: "anon",
+        PGRST_DB_USE_LEGACY_GUCS: "false",
+        PGRST_DB_SCHEMAS: "public,storage,graphql_public",
+        PGRST_JWT_SECRET: globalInfo.jwtTokens.JWT_SECRET,
+    };
     // run fly launch --no-deploy to allocate app
-    globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(pgLaunchCommandArray, "../pg-rest");
+    globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(pgLaunchCommandArray, "../pg-rest", secrets);
+    await allocatePublicIPs("../pg-rest");
+    globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+    pgRestSpinner.stop();
     return;
 }
 async function deployAuth(userDefaultArgs) {
-    console.log(chalk.blue("Deploying auth"));
     let authName;
     if (!options.yes) {
         authName = await input({
             message: "Enter a name for your auth instance, or leave blank for a generated one",
         });
     }
+    const authSpinner = ora({
+        text: "Deploying auth",
+        color: "yellow",
+    }).start();
     // if we dont have a name passed in, we need to generate one
     const nameCommands = authName ? ["--name", authName] : ["--generate-name"];
     // create array of commands
     const authLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
-    console.log("authLaunchCommandArray", authLaunchCommandArray);
     // run fly launch --no-deploy to allocate app
     globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(authLaunchCommandArray, "../auth");
     const secrets = {
@@ -260,20 +282,22 @@ async function deployAuth(userDefaultArgs) {
         GOTRUE_DB_DATABASE_URL: `postgres://supabase_auth_admin:password@${"[" + globalInfo.database.ipv6 + "]"}:5432/postgres`,
     };
     await setFlySecrets(secrets, "../auth");
+    authSpinner.stop();
+    console.log(chalk.green("Auth deployed"));
     return;
 }
 async function setFlySecrets(secrets, path) {
     const args = Object.entries(secrets).map(([key, value]) => `${key}=${value}`);
     const child = spawn("fly", ["secrets", "set", ...args], { cwd: path });
-    child.on("exit", (code, signal) => {
-        console.log(`child process exited with code ${code} and signal ${signal}`);
-    });
-    child.stdout.on("data", (data) => {
-        console.log(`stdout: ${data}`);
-    });
-    child.stderr.on("data", (data) => {
-        console.error(`stderr: ${data}`);
-    });
+    return await execAsync(child);
+}
+async function deployCleanUp() {
+    if (!globalInfo.pgRest.ipv6) {
+        globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+    }
+    if (!globalInfo.pgAuth.ipv6) {
+        globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-meta");
+    }
 }
 async function deployDatabase(userDefaultArgs) {
     let dbName;
@@ -298,7 +322,6 @@ async function deployDatabase(userDefaultArgs) {
     await scaleMemoryFly(dbPath, 1024);
     // wait 2 seconds for the database to start
     setTimeout(() => { }, 2500);
-    await updateFlyDBRoles(dbPath);
     setTimeout(() => { }, 2000);
     return await getInternalIPV6Address(dbPath);
 }
@@ -316,13 +339,13 @@ async function createFlyVolume(path) {
     const flyProcess = spawn(command, args, {
         cwd: path,
     });
-    await execAsyncLog(flyProcess);
+    await execAsync(flyProcess);
 }
 async function scaleMemoryFly(path, memory) {
     const machine = spawn("fly", ["scale", "memory", memory.toString()], {
         cwd: path,
     });
-    await execAsyncLog(machine);
+    await execAsync(machine);
 }
 async function execAsync(spawn) {
     var _a, e_1, _b, _c;
@@ -397,13 +420,16 @@ async function flyAuth() {
     authSpinner.stop();
     console.log("Deploying to fly.io as:", chalk.green(globalInfo.username));
 }
-async function flyLaunchDeployInternalIPV6(launchCommandArray, path) {
+async function flyLaunchDeployInternalIPV6(launchCommandArray, path, secrets) {
     // run fly launch --no-deploy to allocate app
     const launchCommand = spawn("fly", launchCommandArray, {
         cwd: path,
     });
-    await execAsyncLog(launchCommand);
+    await execAsync(launchCommand);
     await allocatePrivateIPV6(path);
+    if (secrets) {
+        await setFlySecrets(secrets, path);
+    }
     await flyDeploy(path);
     setTimeout(() => { }, 2000);
     return await getInternalIPV6Address(path);
@@ -423,8 +449,13 @@ async function flySetDefaultOrg() {
 }
 async function flyDeployAndPrepareDB(defaultArgs) {
     if (!options.dbUrl) {
+        const dbSpinner = ora({
+            text: `Deploying your database...`,
+            color: "yellow",
+        }).start();
         // deploy database
         globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
+        dbSpinner.stop();
         console.log(chalk.green("You successfully deployed your database!"));
     }
 }
@@ -435,34 +466,37 @@ async function allocatePublicIPs(path) {
     const ips6 = spawn("fly", ["ips", "allocate-v6"], {
         cwd: path,
     });
-    await execAsyncLog(ips6);
-    return await execAsyncLog(ips4);
+    await execAsync(ips6);
+    return await execAsync(ips4);
 }
 async function allocatePrivateIPV6(path) {
     const ips = spawn("fly", ["ips", "allocate-v6", "--private"], {
         cwd: path,
     });
-    return await execAsyncLog(ips);
+    return await execAsync(ips);
+}
+async function getNameFromFlyStatus(path) {
+    const flyStatus = spawn("fly", ["status"], {
+        cwd: path,
+    });
+    const result = await execAsync(flyStatus);
+    const regex = /Name\s+=\s+(\S+)/;
+    const res = result.match(regex);
+    if (res) {
+        return res[1];
+    }
+    else {
+        console.error("Name not found: ", path);
+        console.error(result);
+    }
 }
 async function flyDeploy(path) {
     const flyDeploy = spawn("fly", ["deploy"], {
         cwd: path,
     });
-    return await execAsyncLog(flyDeploy);
-}
-async function updatepgRestEnvVars() {
-    const envString = `
-ENV PGRST_DB_ANON_ROLE: "anon"
-ENV PGRST_DB_URI: "postgres://authenticator:password@${globalInfo.database.ipv6}:5432/postgres"
-ENV PGRST_DB_USE_LEGACY_GUCS: "false" 
-ENV PGRST_DB_SCHEMAS="public,storage,graphql_public"
-ENV PGRST_SERVER_HOST="fly-local-6pn"
-ENV PGRST_JWT_SECRET: "${globalInfo.jwtTokens.JWT_SECRET}" 
-`;
-    return await appendFile("../pg-rest/Dockerfile", envString);
+    return await execAsync(flyDeploy);
 }
 async function getInternalIPV6Address(projPath) {
-    console.log(chalk.blue("Getting internal ipv6 address"));
     const copyHostFile = spawn("fly", ["ssh", "console", "--command", "cat etc/hosts"], {
         cwd: projPath,
     });
@@ -485,7 +519,6 @@ async function updatePGMetaDockerFilePGHost(filePath, newInternalAddress) {
         const regex = /PG_META_DB_HOST=".*"/g;
         const newContent = data.replace(regex, `PG_META_DB_HOST="[${newInternalAddress}]"`);
         await writeFile(filePath, newContent, "utf8");
-        console.log("File updated successfully!");
     }
     catch (err) {
         console.error(err);
@@ -601,8 +634,7 @@ services:
 
 ## Secure REST routes
 - name: rest-v1
-  url: http://rest:3000/
-  host: "[${globalInfo.pgRest.ipv6}]"
+  host: "${globalInfo.pgRest.name}.fly.dev"
   port: 3000
   routes:
     - name: rest-v1-all

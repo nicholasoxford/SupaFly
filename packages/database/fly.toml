@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for icy-mountain-2365 on 2023-05-07T20:23:43-06:00
+# fly.toml app configuration file generated for patient-rain-8052 on 2023-05-08T09:54:59-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "icy-mountain-2365"
+app = "patient-rain-8052"
 primary_region = "lax"
 kill_timeout = "5m0s"
 

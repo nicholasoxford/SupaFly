@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for summer-wave-4549 on 2023-05-07T20:26:29-06:00
+# fly.toml app configuration file generated for still-pine-2311 on 2023-05-08T09:57:36-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "summer-wave-4549"
+app = "still-pine-2311"
 primary_region = "lax"
 
 [http_service]

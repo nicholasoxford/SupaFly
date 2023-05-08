@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for wispy-waterfall-4837 on 2023-05-07T20:27:53-06:00
+# fly.toml app configuration file generated for lingering-thunder-8757 on 2023-05-08T09:59:37-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "wispy-waterfall-4837"
+app = "lingering-thunder-8757"
 primary_region = "lax"
 
 [env]

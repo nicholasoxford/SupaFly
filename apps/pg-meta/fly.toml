@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for bitter-resonance-5854 on 2023-05-07T20:25:02-06:00
+# fly.toml app configuration file generated for patient-breeze-7846 on 2023-05-08T09:56:19-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "bitter-resonance-5854"
+app = "patient-breeze-7846"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"

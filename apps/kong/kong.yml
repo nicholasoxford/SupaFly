@@ -6,10 +6,10 @@ _format_version: '1.1'
 consumers:
 - username: anon
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiYWYxMDI5MjYtZDJhNS00OWI4LWIyZGUtNzMwMDkwYjFlNmEyIiwiaWF0IjoxNjgzNTEyNjIxLCJleHAiOjE2ODM1MTYyMjF9.NKOihKIb3B78YL1LEq3gcCNcRmb305dX4c23Fgig3so
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiYTZjNTI0MGQtZTY3OC00ZjI2LTlmYTgtMThkZDlmMWY1YmRlIiwiaWF0IjoxNjgzNTYxMjk4LCJleHAiOjE2ODM1NjQ4OTh9.66mriyma6G5R1_UqknuOO3QJ8bgmgSIgeaCBiDZyt90
 - username: service_role
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiJlNjYwNWRjMy00NmM2LTRmM2QtODVkZi0xNTUxYWJiNWEwNTkiLCJpYXQiOjE2ODM1MTI2MjEsImV4cCI6MTY4MzUxNjIyMX0.q0BWgKNH5q6duh9fJFoBsWEGs9ZlY9-NFtc641clWFI
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiI4MDFhMGNhYy0xNGYzLTRmNTQtOWFhYi1lYjcyMzIxYmEwNDEiLCJpYXQiOjE2ODM1NjEyOTgsImV4cCI6MTY4MzU2NDg5OH0.ASh05k7ASh4ipfuK0qCcZWPLkmeXIXIt1MdhvG6K5C4
 
 ###
 ### Access Control List
@@ -35,7 +35,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open
-  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  host: "[fdaa:2:21ef:a7b:104:5a56:44e4:2]"
   port: 9999
   routes:
     - name: auth-v1-open
@@ -45,7 +45,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-callback
-  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  host: "[fdaa:2:21ef:a7b:104:5a56:44e4:2]"
   port: 9999
   routes:
     - name: auth-v1-open-callback
@@ -55,7 +55,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-authorize
-  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  host: "[fdaa:2:21ef:a7b:104:5a56:44e4:2]"
   port: 9999
   routes:
     - name: auth-v1-open-authorize
@@ -67,7 +67,7 @@ services:
 
 ## Secure Auth routes
 - name: auth-v1
-  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  host: "[fdaa:2:21ef:a7b:104:5a56:44e4:2]"
   port: 9999
   routes:
     - name: auth-v1-all
@@ -88,9 +88,7 @@ services:
 
 ## Secure REST routes
 - name: rest-v1
-  url: http://rest:3000/
-  host: "[]"
-  port: 3000
+  host: "still-pine-2311.fly.dev"
   routes:
     - name: rest-v1-all
       strip_path: true
@@ -109,7 +107,7 @@ services:
           - anon
 ## Secure Database routes
 - name: meta
-  host: "[fdaa:2:21ef:a7b:f8:6747:79ad:2]"
+  host: "[fdaa:2:21ef:a7b:f8:7453:6da7:2]"
   port: 8080
   routes:
     - name: meta-all
