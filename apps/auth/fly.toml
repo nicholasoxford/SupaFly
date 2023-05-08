@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for nameless-wildflower-6085 on 2023-05-08T09:58:32-06:00
+# fly.toml app configuration file generated for damp-sun-4529 on 2023-05-08T13:04:16-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "nameless-wildflower-6085"
+app = "damp-sun-4529"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"

@@ -77,6 +77,7 @@ async function main() {
     await deployAuth(defaultArgs);
     await deployCleanUp();
     await deployKong(defaultArgs);
+    await launchTest();
 }
 // ---------------------------------------------
 // You are enterning function forest
@@ -297,6 +298,9 @@ async function deployCleanUp() {
     }
     if (!globalInfo.pgAuth.ipv6) {
         globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-meta");
+    }
+    if (!globalInfo.pgMeta.ipv6) {
+        globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
     }
 }
 async function deployDatabase(userDefaultArgs) {
@@ -523,6 +527,17 @@ async function updatePGMetaDockerFilePGHost(filePath, newInternalAddress) {
     catch (err) {
         console.error(err);
     }
+}
+async function launchTest() {
+    var _a;
+    const browser = process.platform === "win32" ? "cmd.exe" : "open";
+    globalInfo.kong.publicUrl = (_a = (await getNameFromFlyStatus("../kong"))) !== null && _a !== void 0 ? _a : "";
+    const link = `https://www.${globalInfo.kong.publicUrl}.fly.dev/test`;
+    const openLink = spawn(browser, ["/c", "start", "", link], {
+        detached: true,
+        stdio: "ignore",
+    });
+    openLink.unref();
 }
 function generateSupaJWTs() {
     var signingKey = secureRandom(256, { type: "Buffer" });

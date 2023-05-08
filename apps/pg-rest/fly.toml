@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for still-pine-2311 on 2023-05-08T09:57:36-06:00
+# fly.toml app configuration file generated for red-wind-293 on 2023-05-08T13:03:19-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "still-pine-2311"
+app = "red-wind-293"
 primary_region = "lax"
 
 [http_service]

@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for lingering-thunder-8757 on 2023-05-08T09:59:37-06:00
+# fly.toml app configuration file generated for green-haze-783 on 2023-05-08T13:05:15-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "lingering-thunder-8757"
+app = "green-haze-783"
 primary_region = "lax"
 
 [env]
@@ -12,7 +12,6 @@ primary_region = "lax"
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = true
   auto_start_machines = true
   [http_service.concurrency]
     type = "requests"
