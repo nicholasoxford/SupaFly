@@ -1,0 +1,120 @@
+_format_version: '1.1'
+
+###
+### Consumers / Users
+###
+consumers:
+- username: anon
+  keyauth_credentials:
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiYWYxMDI5MjYtZDJhNS00OWI4LWIyZGUtNzMwMDkwYjFlNmEyIiwiaWF0IjoxNjgzNTEyNjIxLCJleHAiOjE2ODM1MTYyMjF9.NKOihKIb3B78YL1LEq3gcCNcRmb305dX4c23Fgig3so
+- username: service_role
+  keyauth_credentials:
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiJlNjYwNWRjMy00NmM2LTRmM2QtODVkZi0xNTUxYWJiNWEwNTkiLCJpYXQiOjE2ODM1MTI2MjEsImV4cCI6MTY4MzUxNjIyMX0.q0BWgKNH5q6duh9fJFoBsWEGs9ZlY9-NFtc641clWFI
+
+###
+### Access Control List
+###
+acls:
+- consumer: anon
+  group: anon
+- consumer: service_role
+  group: admin
+
+###
+### API Routes
+###
+services:
+## Open Auth routes
+- name: test
+  url: https://kongtest.nick-prim.workers.dev/
+  routes:
+    - name: test
+      strip_path: true
+      paths:
+        - /test
+  plugins:
+    - name: cors
+- name: auth-v1-open
+  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  port: 9999
+  routes:
+    - name: auth-v1-open
+      strip_path: true
+      paths:
+        - /auth/v1/verify
+  plugins:
+    - name: cors
+- name: auth-v1-open-callback
+  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  port: 9999
+  routes:
+    - name: auth-v1-open-callback
+      strip_path: true
+      paths:
+        - /auth/v1/callback
+  plugins:
+    - name: cors
+- name: auth-v1-open-authorize
+  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  port: 9999
+  routes:
+    - name: auth-v1-open-authorize
+      strip_path: true
+      paths:
+        - /auth/v1/authorize
+  plugins:
+    - name: cors
+
+## Secure Auth routes
+- name: auth-v1
+  host: "[fdaa:2:21ef:a7b:f8:a045:51c:2]"
+  port: 9999
+  routes:
+    - name: auth-v1-all
+      strip_path: true
+      paths:
+        - /auth/v1/
+  plugins:
+    - name: cors
+    - name: key-auth
+      config:
+        hide_credentials: false
+    - name: acl
+      config:
+        hide_groups_header: true
+        allow:
+          - admin
+          - anon
+
+## Secure REST routes
+- name: rest-v1
+  url: http://rest:3000/
+  host: "[]"
+  port: 3000
+  routes:
+    - name: rest-v1-all
+      strip_path: true
+      paths:
+        - /rest/v1/
+  plugins:
+    - name: cors
+    - name: key-auth
+      config:
+        hide_credentials: true
+    - name: acl
+      config:
+        hide_groups_header: true
+        allow:
+          - admin
+          - anon
+## Secure Database routes
+- name: meta
+  host: "[fdaa:2:21ef:a7b:f8:6747:79ad:2]"
+  port: 8080
+  routes:
+    - name: meta-all
+      strip_path: true
+      paths:
+        - /pg/
+
+  

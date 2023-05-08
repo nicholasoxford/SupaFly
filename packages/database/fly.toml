@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for misty-sound-7067 on 2023-05-07T12:15:40-06:00
+# fly.toml app configuration file generated for icy-mountain-2365 on 2023-05-07T20:23:43-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "misty-sound-7067"
+app = "icy-mountain-2365"
 primary_region = "lax"
 kill_timeout = "5m0s"
 

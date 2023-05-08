@@ -13,7 +13,8 @@ import chalk from "chalk";
 import ora from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile, appendFile } from "fs/promises";
+import randomWords from "random-words";
 // Create cli program helper and options
 const program = new Command();
 program
@@ -49,13 +50,17 @@ let globalInfo = {
     database: {
         ipv6: "",
     },
+    kong: {
+        ipv6: "",
+        publicUrl: "",
+    },
 };
 main();
-// takeoff function
 // Deploy supabase starter kit to fly.io
 async function main() {
     // check if fly cli is authenticated
     await flyAuth();
+    // generate service and anon tokens
     generateSupaJWTs();
     // chose default region if not passed in
     await flySetDefaultRegion();
@@ -64,14 +69,15 @@ async function main() {
     // turn our info object into default fly args
     const defaultArgs = getDefaultFlyArgs(globalInfo);
     // deploy database
-    await flySetDB(defaultArgs);
-    // update authenticator and auth in postgres
-    await updateFlyDBRoles("../../packages/database");
+    await flyDeployAndPrepareDB(defaultArgs);
     // deploy api
-    await deployMeta(defaultArgs);
+    await deployPGMeta(defaultArgs);
     // deploy postGREST
-    await deployPostgREST(defaultArgs);
-    console.log(globalInfo);
+    await deployPGREST(defaultArgs);
+    await deployAuth(defaultArgs);
+    console.log("globalInfo", globalInfo);
+    await deployKong(defaultArgs);
+    console.log("post kong");
 }
 // ---------------------------------------------
 // You are enterning function forest
@@ -149,7 +155,7 @@ async function choseDefaultRegions() {
 }
 // Fly io specific functions
 //Deploying postgres-meta
-async function deployMeta(userDefaultArgs) {
+async function deployPGMeta(userDefaultArgs) {
     console.log(chalk.blue("Deploying metadata"));
     let metaName;
     if (!options.yes) {
@@ -178,9 +184,29 @@ async function updateFlyDBRoles(path) {
     await execAsyncLog(flyProcess1);
     await execAsyncLog(flyProcess2);
 }
+async function deployKong(userDefaultArgs) {
+    console.log(chalk.blue("Deploying Kong"));
+    let kongName;
+    if (!options.yes) {
+        kongName = await input({
+            message: "Enter a name for your Kong instance, or leave blank for a generated one",
+        });
+    }
+    // if we dont have a name passed in, we need to generate one
+    const nameCommands = kongName ? ["--name", kongName] : ["--generate-name"];
+    // create array of commands
+    const kongLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    console.log("kongLaunchCommandArray", kongLaunchCommandArray);
+    // run fly launch --no-deploy to allocate app
+    await createkongYaml();
+    globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(kongLaunchCommandArray, "../kong");
+    await allocatePublicIPs("../kong");
+    return;
+}
 //Deploying postgresT
-async function deployPostgREST(userDefaultArgs) {
+async function deployPGREST(userDefaultArgs) {
     console.log(chalk.blue("Deploying postgREST"));
+    await updatepgRestEnvVars();
     let postgrestName;
     if (!options.yes) {
         postgrestName = await input({
@@ -192,10 +218,62 @@ async function deployPostgREST(userDefaultArgs) {
         ? ["--name", postgrestName]
         : ["--generate-name"];
     // create array of commands
-    const metalaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    const pgLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    console.log("pgLaunchCommandArray", pgLaunchCommandArray);
     // run fly launch --no-deploy to allocate app
-    globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(metalaunchCommandArray, "../pg-rest");
+    globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(pgLaunchCommandArray, "../pg-rest");
     return;
+}
+async function deployAuth(userDefaultArgs) {
+    console.log(chalk.blue("Deploying auth"));
+    let authName;
+    if (!options.yes) {
+        authName = await input({
+            message: "Enter a name for your auth instance, or leave blank for a generated one",
+        });
+    }
+    // if we dont have a name passed in, we need to generate one
+    const nameCommands = authName ? ["--name", authName] : ["--generate-name"];
+    // create array of commands
+    const authLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    console.log("authLaunchCommandArray", authLaunchCommandArray);
+    // run fly launch --no-deploy to allocate app
+    globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(authLaunchCommandArray, "../auth");
+    const secrets = {
+        PROJECT_ID: `supabased-${randomWords(1)}-${randomWords(1)}`,
+        AUTH_EXTERNAL_GITHUB: "true",
+        AUTH_SITE_URL: "https://example.com",
+        GOTRUE_JWT_EXP: "86400",
+        GOTRUE_API_PORT: 9999,
+        GOTRUE_API_HOST: "fly-local-6pn",
+        GOTRUE_DB_DRIVER: "postgres",
+        GOTRUE_JWT_SECRET: globalInfo.jwtTokens.JWT_SECRET,
+        GOTRUE_DISABLE_SIGNUP: "false",
+        GOTRUE_EXTERNAL_EMAIL_ENABLED: "true",
+        ENABLE_DOUBLE_CONFIRM: "false",
+        GOTRUE_MAILER_AUTOCONFIRM: "false",
+        GOTRUE_JWT_ADMIN_ROLES: "service_role",
+        GOTRUE_JWT_AUD: "authenticated",
+        GOTRUE_JWT_DEFAULT_GROUP_NAME: "authenticated",
+        API_EXTERNAL_URL: "https://example.com",
+        GOTRUE_SITE_URL: "https://example.com",
+        GOTRUE_DB_DATABASE_URL: `postgres://supabase_auth_admin:password@${"[" + globalInfo.database.ipv6 + "]"}:5432/postgres`,
+    };
+    await setFlySecrets(secrets, "../auth");
+    return;
+}
+async function setFlySecrets(secrets, path) {
+    const args = Object.entries(secrets).map(([key, value]) => `${key}=${value}`);
+    const child = spawn("fly", ["secrets", "set", ...args], { cwd: path });
+    child.on("exit", (code, signal) => {
+        console.log(`child process exited with code ${code} and signal ${signal}`);
+    });
+    child.stdout.on("data", (data) => {
+        console.log(`stdout: ${data}`);
+    });
+    child.stderr.on("data", (data) => {
+        console.error(`stderr: ${data}`);
+    });
 }
 async function deployDatabase(userDefaultArgs) {
     let dbName;
@@ -219,6 +297,8 @@ async function deployDatabase(userDefaultArgs) {
     await flyDeploy(dbPath);
     await scaleMemoryFly(dbPath, 1024);
     // wait 2 seconds for the database to start
+    setTimeout(() => { }, 2500);
+    await updateFlyDBRoles(dbPath);
     setTimeout(() => { }, 2000);
     return await getInternalIPV6Address(dbPath);
 }
@@ -325,6 +405,7 @@ async function flyLaunchDeployInternalIPV6(launchCommandArray, path) {
     await execAsyncLog(launchCommand);
     await allocatePrivateIPV6(path);
     await flyDeploy(path);
+    setTimeout(() => { }, 2000);
     return await getInternalIPV6Address(path);
 }
 async function flySetDefaultRegion() {
@@ -340,12 +421,22 @@ async function flySetDefaultOrg() {
     globalInfo.organization = (_a = options.org) !== null && _a !== void 0 ? _a : "personal";
     console.log("Deploying to organization:", chalk.green(globalInfo.organization));
 }
-async function flySetDB(defaultArgs) {
+async function flyDeployAndPrepareDB(defaultArgs) {
     if (!options.dbUrl) {
         // deploy database
         globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
         console.log(chalk.green("You successfully deployed your database!"));
     }
+}
+async function allocatePublicIPs(path) {
+    const ips4 = spawn("fly", ["ips", "allocate-v4", "--shared"], {
+        cwd: path,
+    });
+    const ips6 = spawn("fly", ["ips", "allocate-v6"], {
+        cwd: path,
+    });
+    await execAsyncLog(ips6);
+    return await execAsyncLog(ips4);
 }
 async function allocatePrivateIPV6(path) {
     const ips = spawn("fly", ["ips", "allocate-v6", "--private"], {
@@ -359,13 +450,23 @@ async function flyDeploy(path) {
     });
     return await execAsyncLog(flyDeploy);
 }
+async function updatepgRestEnvVars() {
+    const envString = `
+ENV PGRST_DB_ANON_ROLE: "anon"
+ENV PGRST_DB_URI: "postgres://authenticator:password@${globalInfo.database.ipv6}:5432/postgres"
+ENV PGRST_DB_USE_LEGACY_GUCS: "false" 
+ENV PGRST_DB_SCHEMAS="public,storage,graphql_public"
+ENV PGRST_SERVER_HOST="fly-local-6pn"
+ENV PGRST_JWT_SECRET: "${globalInfo.jwtTokens.JWT_SECRET}" 
+`;
+    return await appendFile("../pg-rest/Dockerfile", envString);
+}
 async function getInternalIPV6Address(projPath) {
     console.log(chalk.blue("Getting internal ipv6 address"));
     const copyHostFile = spawn("fly", ["ssh", "console", "--command", "cat etc/hosts"], {
         cwd: projPath,
     });
     const result = await execAsync(copyHostFile);
-    console.log(result);
     // Extract the IPv6 address before "fly-local-6pn"
     const match = result.match(/([0-9a-fA-F:]+)\s+fly-local-6pn/);
     let ipv6 = "";
@@ -373,7 +474,8 @@ async function getInternalIPV6Address(projPath) {
         ipv6 = match[1];
     }
     else {
-        console.error("IPv6 address not found");
+        console.error("IPv6 address not found: ", projPath);
+        console.error(result);
     }
     return ipv6;
 }
@@ -405,6 +507,131 @@ function generateSupaJWTs() {
     globalInfo.jwtTokens.serviceToken = njwt
         .create(serviceClaims, signingKey)
         .compact();
+    globalInfo.jwtTokens.JWT_SECRET = signingKey.toString("hex");
+    return;
+}
+async function createkongYaml() {
+    const kongYaml = `_format_version: '1.1'
+
+###
+### Consumers / Users
+###
+consumers:
+- username: anon
+  keyauth_credentials:
+    - key: ${globalInfo.jwtTokens.anonToken}
+- username: service_role
+  keyauth_credentials:
+    - key: ${globalInfo.jwtTokens.serviceToken}
+
+###
+### Access Control List
+###
+acls:
+- consumer: anon
+  group: anon
+- consumer: service_role
+  group: admin
+
+###
+### API Routes
+###
+services:
+## Open Auth routes
+- name: test
+  url: https://kongtest.nick-prim.workers.dev/
+  routes:
+    - name: test
+      strip_path: true
+      paths:
+        - /test
+  plugins:
+    - name: cors
+- name: auth-v1-open
+  host: "[${globalInfo.pgAuth.ipv6}]"
+  port: 9999
+  routes:
+    - name: auth-v1-open
+      strip_path: true
+      paths:
+        - /auth/v1/verify
+  plugins:
+    - name: cors
+- name: auth-v1-open-callback
+  host: "[${globalInfo.pgAuth.ipv6}]"
+  port: 9999
+  routes:
+    - name: auth-v1-open-callback
+      strip_path: true
+      paths:
+        - /auth/v1/callback
+  plugins:
+    - name: cors
+- name: auth-v1-open-authorize
+  host: "[${globalInfo.pgAuth.ipv6}]"
+  port: 9999
+  routes:
+    - name: auth-v1-open-authorize
+      strip_path: true
+      paths:
+        - /auth/v1/authorize
+  plugins:
+    - name: cors
+
+## Secure Auth routes
+- name: auth-v1
+  host: "[${globalInfo.pgAuth.ipv6}]"
+  port: 9999
+  routes:
+    - name: auth-v1-all
+      strip_path: true
+      paths:
+        - /auth/v1/
+  plugins:
+    - name: cors
+    - name: key-auth
+      config:
+        hide_credentials: false
+    - name: acl
+      config:
+        hide_groups_header: true
+        allow:
+          - admin
+          - anon
+
+## Secure REST routes
+- name: rest-v1
+  url: http://rest:3000/
+  host: "[${globalInfo.pgRest.ipv6}]"
+  port: 3000
+  routes:
+    - name: rest-v1-all
+      strip_path: true
+      paths:
+        - /rest/v1/
+  plugins:
+    - name: cors
+    - name: key-auth
+      config:
+        hide_credentials: true
+    - name: acl
+      config:
+        hide_groups_header: true
+        allow:
+          - admin
+          - anon
+## Secure Database routes
+- name: meta
+  host: "[${globalInfo.pgMeta.ipv6}]"
+  port: 8080
+  routes:
+    - name: meta-all
+      strip_path: true
+      paths:
+        - /pg/
+
+  `;
+    await writeFile("../kong/kong.yml", kongYaml, "utf8");
     return;
 }
 const launchDefaultArgs = [
