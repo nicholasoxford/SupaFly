@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for hidden-breeze-5955 on 2023-05-08T20:16:53-06:00
+# fly.toml app configuration file generated for white-moon-2294 on 2023-05-09T07:21:42-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "hidden-breeze-5955"
+app = "white-moon-2294"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"

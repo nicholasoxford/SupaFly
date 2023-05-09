@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for falling-meadow-2024 on 2023-05-08T20:16:01-06:00
+# fly.toml app configuration file generated for quiet-snow-8383 on 2023-05-09T07:20:47-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "falling-meadow-2024"
+app = "quiet-snow-8383"
 primary_region = "lax"
 
 [http_service]

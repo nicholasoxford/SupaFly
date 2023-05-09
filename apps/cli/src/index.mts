@@ -431,7 +431,7 @@ async function deployCleanUp() {
     globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
   }
   if (!globalInfo.pgAuth.ipv6) {
-    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-meta");
+    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-auth");
   }
   if (!globalInfo.pgMeta.ipv6) {
     globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");

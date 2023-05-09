@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for autumn-brook-2509 on 2023-05-08T20:17:49-06:00
+# fly.toml app configuration file generated for red-wind-1849 on 2023-05-09T07:22:41-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "autumn-brook-2509"
+app = "red-wind-1849"
 primary_region = "lax"
 
 [env]

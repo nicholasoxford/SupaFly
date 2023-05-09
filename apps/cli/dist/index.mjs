@@ -310,7 +310,7 @@ async function deployAuth(userDefaultArgs) {
     // run fly launch --no-deploy to allocate app
     globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(authLaunchCommandArray, "../auth");
     const secrets = {
-        PROJECT_ID: `supabased-${randomWords(1)}-${randomWords(1)}`,
+        PROJECT_ID: `supafly-${randomWords(1)}-${randomWords(1)}`,
         AUTH_EXTERNAL_GITHUB: "true",
         AUTH_SITE_URL: "https://example.com",
         GOTRUE_JWT_EXP: "86400",
