@@ -42,3 +42,5 @@ pnpm takeoff
 - issues persisting data with database redeployments
 - Pass in passwords for postgres roles
 - Better name generatortion for supabase services
+
+[SupaFly Progress Tracker](https://github.com/users/nicholasoxford/projects/1/views/1)
