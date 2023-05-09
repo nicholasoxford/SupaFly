@@ -190,7 +190,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
   await updatePGMetaDockerFilePGHost(
-    "../pg-meta/Dockerfile",
+    "../apps/pg-meta/Dockerfile",
     globalInfo.database.ipv6
   );
   // create array of commands
@@ -203,7 +203,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
     metalaunchCommandArray,
-    "../pg-meta"
+    "../apps/pg-meta"
   );
   metaSpinner.stop();
   console.log(chalk.green("Metadata deployed"));
@@ -273,11 +273,11 @@ async function deployStudio(userDefaultArgs: string[]) {
   };
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     studioLaunchCommandArray,
-    "../studio",
+    "../apps/studio",
     secrets
   );
 
-  await allocatePublicIPs("../studio");
+  await allocatePublicIPs("../apps/studio");
 
   studioSpinner.stop();
   console.log(chalk.green("Supabase Studio deployed"));
@@ -309,16 +309,16 @@ async function deployKong(userDefaultArgs: string[]) {
   await createkongYaml();
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     kongLaunchCommandArray,
-    "../kong"
+    "../apps/kong"
   );
-  await allocatePublicIPs("../kong");
+  await allocatePublicIPs("../apps/kong");
   kongSpinner.stop();
   console.log(chalk.green("Kong deployed"));
   return;
 }
 //Deploying postgresT
 async function deployPGREST(userDefaultArgs: string[]) {
-  await updateFlyDBRoles("../../packages/database");
+  await updateFlyDBRoles("../apps/apps/database");
   let postgrestName;
   if (!options.yes) {
     postgrestName = await input({
@@ -354,11 +354,11 @@ async function deployPGREST(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
     pgLaunchCommandArray,
-    "../pg-rest",
+    "../apps/pg-rest",
     secrets
   );
-  await allocatePublicIPs("../pg-rest");
-  globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+  await allocatePublicIPs("../apps/pg-rest");
+  globalInfo.pgRest.name = await getNameFromFlyStatus("../apps/pg-rest");
   pgRestSpinner.stop();
   console.log(chalk.green("PostgREST deployed"));
   return;
@@ -388,7 +388,7 @@ async function deployAuth(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(
     authLaunchCommandArray,
-    "../auth"
+    "../apps/auth"
   );
   const secrets = {
     PROJECT_ID: `supafly-${randomWords(1)}-${randomWords(1)}`,
@@ -413,7 +413,7 @@ async function deployAuth(userDefaultArgs: string[]) {
     }:5432/postgres`,
   };
 
-  await setFlySecrets(secrets, "../auth");
+  await setFlySecrets(secrets, "../apps/auth");
   authSpinner.stop();
   console.log(chalk.green("Auth deployed"));
   return;
@@ -428,18 +428,18 @@ async function setFlySecrets(secrets: any, path: string) {
 }
 async function deployCleanUp() {
   if (!globalInfo.pgRest.ipv6) {
-    globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+    globalInfo.pgRest.name = await getNameFromFlyStatus("../apps/pg-rest");
   }
   if (!globalInfo.pgAuth.ipv6) {
-    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-auth");
+    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../apps/pg-auth");
   }
   if (!globalInfo.pgMeta.ipv6) {
-    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
+    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../apps/pg-meta");
   }
 }
 async function deployDatabase(userDefaultArgs: string[]) {
   let dbName;
-  const dbPath = "../../packages/database";
+  const dbPath = "../apps/../packages/database";
   if (!options.yes) {
     dbName = await input({
       message:
@@ -668,7 +668,8 @@ async function updatePGMetaDockerFilePGHost(
 }
 
 async function apiGatewayTest() {
-  globalInfo.kong.publicUrl = (await getNameFromFlyStatus("../kong")) ?? "";
+  globalInfo.kong.publicUrl =
+    (await getNameFromFlyStatus("../apps/kong")) ?? "";
   const link = `https://${globalInfo.kong.publicUrl}.fly.dev/test`;
   console.log(
     "Click this link to test your Supabase deployment:",
@@ -676,7 +677,8 @@ async function apiGatewayTest() {
   );
 }
 async function studioTest() {
-  globalInfo.studio.publicUrl = (await getNameFromFlyStatus("../studio")) ?? "";
+  globalInfo.studio.publicUrl =
+    (await getNameFromFlyStatus("../apps/studio")) ?? "";
   const studioLink = `https://${globalInfo.studio.publicUrl}.fly.dev`;
   console.log(
     "Click this link to visit your Supabase studio:",
@@ -825,7 +827,7 @@ services:
         - /pg/
 
   `;
-  await writeFile("../kong/kong.yml", kongYaml, "utf8");
+  await writeFile("../apps/kong/kong.yml", kongYaml, "utf8");
   return;
 }
 
