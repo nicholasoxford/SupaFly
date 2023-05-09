@@ -50,7 +50,7 @@ pnpm takeoff
 
 ## Things to work on
 
-- Suapbase Auth Deployment
+- Suapbase Storage Deployment
 - Postgrest alpine image
 - issues persisting data with database redeployments
 - Pass in passwords for postgres roles
