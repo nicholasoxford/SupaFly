@@ -2,7 +2,8 @@
 
 This easiest way to deploy Supabase to Fly.io
 
-![Group 1](https://user-images.githubusercontent.com/51415676/236983368-caac8b95-c266-4193-a14b-d5fab8766e10.png)
+
+<img src="https://user-images.githubusercontent.com/51415676/236983368-caac8b95-c266-4193-a14b-d5fab8766e10.png" width=50% height=50%>
 
 ## Features
 - Uses new [Fly.io Apps v2](https://fly.io/docs/reference/apps/) platform
