@@ -4,7 +4,8 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "takeoff": "cd apps/cli && node dist/index.mjs -y"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
@@ -13,7 +14,7 @@
     "turbo": "latest"
   },
   "packageManager": "pnpm@7.15.0",
-  "name": "supabased",
+  "name": "Supafly",
   "dependencies": {
     "@inquirer/prompts": "^1.0.0"
   }

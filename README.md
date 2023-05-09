@@ -21,3 +21,18 @@ brew install flyctl
 ### We recommend creating a new organaztion for your SupaFly project
 
 > If you don't pass in a value for `--org` it will default to your personal organazation
+
+## Deploying SupaFly
+
+```sh
+pnpm install
+pnpm takeoff
+```
+
+## Things to work on
+
+- Suapbase Auth Deployment
+- Postgrest alpine image
+- issues persisting data with database redeployments
+- Pass in passwords for postgres roles
+- Better name generatortion for supabase services
