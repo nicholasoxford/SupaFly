@@ -14,7 +14,7 @@ COPY --from=build /usr/src/app/dist dist
 COPY package.json ./
 ENV PG_META_PORT=8080
 ENV PG_META_HOST="fly-local-6pn" \
-    PG_META_DB_HOST="[fdaa:2:21ef:a7b:f8:866b:2e30:2]" \
+    PG_META_DB_HOST="[fdaa:2:21ef:a7b:f8:c26f:f555:2]" \
     PG_META_DB_PORT=5432 \
     PG_META_DB_NAME=postgres \
     PG_META_DB_PASSWORD=password

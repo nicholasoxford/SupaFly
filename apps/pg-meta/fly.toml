@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for cold-wind-3917 on 2023-05-08T19:32:47-06:00
+# fly.toml app configuration file generated for twilight-rain-4519 on 2023-05-08T20:14:40-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "cold-wind-3917"
+app = "twilight-rain-4519"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"

@@ -256,6 +256,7 @@ async function deployStudio(userDefaultArgs: string[]) {
   const secrets = {
     DEFAULT_PROJECT_NAME: "SupaFly",
     SUPABASE_PUBLIC_URL: `https://${globalInfo.kong.publicUrl}.fly.dev`,
+    SUPABASE_URL: `https://${globalInfo.kong.publicUrl}.fly.dev/`,
     STUDIO_PG_META_URL: `https://${globalInfo.kong.publicUrl}.fly.dev/pg`,
     SUPABASE_ANON_KEY: globalInfo.jwtTokens.anonToken,
     SUPABASE_SERVICE_KEY: globalInfo.jwtTokens.serviceToken,
@@ -678,7 +679,7 @@ async function studioTest() {
   globalInfo.studio.publicUrl = (await getNameFromFlyStatus("../studio")) ?? "";
   const studioLink = `https://${globalInfo.studio.publicUrl}.fly.dev`;
   console.log(
-    "Click this link to visir your Supabase studio:",
+    "Click this link to visit your Supabase studio:",
     chalk.green(studioLink)
   );
 }

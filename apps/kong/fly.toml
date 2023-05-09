@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for weathered-bush-128 on 2023-05-08T19:35:56-06:00
+# fly.toml app configuration file generated for autumn-brook-2509 on 2023-05-08T20:17:49-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "weathered-bush-128"
+app = "autumn-brook-2509"
 primary_region = "lax"
 
 [env]

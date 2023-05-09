@@ -6,10 +6,10 @@ _format_version: '1.1'
 consumers:
 - username: anon
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiMjYyN2FkNTMtN2ZjMC00ODU0LTlmYTctMTAwN2VhNjJlMzI4IiwiaWF0IjoxNjgzNTk1ODk0LCJleHAiOjE2ODM1OTk0OTR9.m9uaAoeEoZtgYUzSp7rF5bQURVZUTD3dph9B1SqhFB4
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiM2U4ZDA4NzAtYjQ1ZS00YmM5LWJjY2UtODgzMjgzZGUyNGFhIiwiaWF0IjoxNjgzNTk4NDA2LCJleHAiOjE2ODM2MDIwMDZ9.XqmEAo5AEGI3yjhdNuC-gBlk6isITYE0mu5yTrG0cBg
 - username: service_role
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiIxYjU5MWM2Mi0zNzM4LTQ0Y2UtYWZiOS0wYmY4ZWZhMGFmZjIiLCJpYXQiOjE2ODM1OTU4OTQsImV4cCI6MTY4MzU5OTQ5NH0.YwfIj_Lfkp-TGfqoKE83lV7Q1YSs8LZCNFcxuXxMfO4
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiIxM2VkMGJlZC1iNjE5LTQ3NjctOGMyNy00NDZiNWYzMWYxODAiLCJpYXQiOjE2ODM1OTg0MDYsImV4cCI6MTY4MzYwMjAwNn0.qKZmcXb1dCKSWqNuQKoKmkyzqWneL_Z41S9VIP2REWg
 
 ###
 ### Access Control List
@@ -35,7 +35,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open
-  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
+  host: "[fdaa:2:21ef:a7b:f8:1b7f:54c5:2]"
   port: 9999
   routes:
     - name: auth-v1-open
@@ -45,7 +45,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-callback
-  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
+  host: "[fdaa:2:21ef:a7b:f8:1b7f:54c5:2]"
   port: 9999
   routes:
     - name: auth-v1-open-callback
@@ -55,7 +55,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-authorize
-  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
+  host: "[fdaa:2:21ef:a7b:f8:1b7f:54c5:2]"
   port: 9999
   routes:
     - name: auth-v1-open-authorize
@@ -67,7 +67,7 @@ services:
 
 ## Secure Auth routes
 - name: auth-v1
-  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
+  host: "[fdaa:2:21ef:a7b:f8:1b7f:54c5:2]"
   port: 9999
   routes:
     - name: auth-v1-all
@@ -88,7 +88,7 @@ services:
 
 ## Secure REST routes
 - name: rest-v1
-  url: https://lingering-leaf-7039.fly.dev/
+  url: "https://falling-meadow-2024.fly.dev/"
   routes:
     - name: rest-v1-all
       strip_path: true
@@ -107,7 +107,7 @@ services:
           - anon
 ## Secure Database routes
 - name: meta
-  host: "[fdaa:2:21ef:a7b:f8:e54a:399b:2]"
+  host: "[fdaa:2:21ef:a7b:104:fad1:d2b4:2]"
   port: 8080
   routes:
     - name: meta-all

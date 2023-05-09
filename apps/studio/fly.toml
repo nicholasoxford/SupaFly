@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for summer-snow-9086 on 2023-05-08T19:37:01-06:00
+# fly.toml app configuration file generated for shy-silence-2935 on 2023-05-08T20:18:55-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "summer-snow-9086"
+app = "shy-silence-2935"
 primary_region = "lax"
 
 [env]
