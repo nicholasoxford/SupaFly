@@ -9,7 +9,7 @@ This easiest way to deploy Supabase to Fly.io
 - Uses new [Fly.io Apps v2](https://fly.io/docs/reference/apps/) platform
 - Uses Fly's [private networking](https://fly.io/docs/reference/private-networking/)
 > Applications within the same organization are assigned special addresses ("6PN addresses") tied to the organization. Those applications can talk to each other because of those 6PN addresses, but applications from other organizations can't; the Fly platform won't forward between different 6PN networks.
-
+- Turborepo to make it easy to build off of
 
 ## Pre-requisites
 
