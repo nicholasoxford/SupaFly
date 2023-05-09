@@ -1,17 +1,19 @@
-# fly.toml app configuration file generated for weathered-bush-128 on 2023-05-08T19:35:56-06:00
+# fly.toml app configuration file generated for summer-snow-9086 on 2023-05-08T19:37:01-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "weathered-bush-128"
+app = "summer-snow-9086"
 primary_region = "lax"
 
 [env]
-  DEFAULT_ORGANIZATION_NAME = "N"
+  DEFAULT_PROJECT_NAME = "Big test"
+  testest = "testest"
 
 [http_service]
-  internal_port = 8000
+  internal_port = 3000
   force_https = true
+  auto_stop_machines = true
   auto_start_machines = true
   [http_service.concurrency]
     type = "requests"

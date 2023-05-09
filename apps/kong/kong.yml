@@ -6,10 +6,10 @@ _format_version: '1.1'
 consumers:
 - username: anon
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiOWNiNzMxNDQtNDdmOC00NTgxLWFiOTMtMzI2OTZlMTk2YmE4IiwiaWF0IjoxNjgzNTcyNDM5LCJleHAiOjE2ODM1NzYwMzl9.UkcuVxWYMNKyckolonKN-OGDYqV9BQmlIReJJwBaSxs
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwianRpIjoiMjYyN2FkNTMtN2ZjMC00ODU0LTlmYTctMTAwN2VhNjJlMzI4IiwiaWF0IjoxNjgzNTk1ODk0LCJleHAiOjE2ODM1OTk0OTR9.m9uaAoeEoZtgYUzSp7rF5bQURVZUTD3dph9B1SqhFB4
 - username: service_role
   keyauth_credentials:
-    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiJjYjVjYTdiNS0wMWEzLTQxM2YtODNlMS0zNjk2NzlhNGZjYWEiLCJpYXQiOjE2ODM1NzI0MzksImV4cCI6MTY4MzU3NjAzOX0.MhnIit_RdAOzZdm7KATpN62G28GlOD2fq73LqDKE54Q
+    - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJqdGkiOiIxYjU5MWM2Mi0zNzM4LTQ0Y2UtYWZiOS0wYmY4ZWZhMGFmZjIiLCJpYXQiOjE2ODM1OTU4OTQsImV4cCI6MTY4MzU5OTQ5NH0.YwfIj_Lfkp-TGfqoKE83lV7Q1YSs8LZCNFcxuXxMfO4
 
 ###
 ### Access Control List
@@ -35,7 +35,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open
-  host: "[fdaa:2:21ef:a7b:c850:827e:f9d8:2]"
+  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
   port: 9999
   routes:
     - name: auth-v1-open
@@ -45,7 +45,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-callback
-  host: "[fdaa:2:21ef:a7b:c850:827e:f9d8:2]"
+  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
   port: 9999
   routes:
     - name: auth-v1-open-callback
@@ -55,7 +55,7 @@ services:
   plugins:
     - name: cors
 - name: auth-v1-open-authorize
-  host: "[fdaa:2:21ef:a7b:c850:827e:f9d8:2]"
+  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
   port: 9999
   routes:
     - name: auth-v1-open-authorize
@@ -67,7 +67,7 @@ services:
 
 ## Secure Auth routes
 - name: auth-v1
-  host: "[fdaa:2:21ef:a7b:c850:827e:f9d8:2]"
+  host: "[fdaa:2:21ef:a7b:f8:9d37:72c4:2]"
   port: 9999
   routes:
     - name: auth-v1-all
@@ -88,8 +88,7 @@ services:
 
 ## Secure REST routes
 - name: rest-v1
-  host: "red-wind-293.fly.dev"
-  port: 3000
+  url: https://lingering-leaf-7039.fly.dev/
   routes:
     - name: rest-v1-all
       strip_path: true
@@ -108,7 +107,7 @@ services:
           - anon
 ## Secure Database routes
 - name: meta
-  host: "[fdaa:2:21ef:a7b:104:d904:536b:2]"
+  host: "[fdaa:2:21ef:a7b:f8:e54a:399b:2]"
   port: 8080
   routes:
     - name: meta-all

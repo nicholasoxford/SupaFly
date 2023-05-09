@@ -54,6 +54,10 @@ let globalInfo = {
         ipv6: "",
         publicUrl: "",
     },
+    studio: {
+        ipv6: "",
+        publicUrl: "",
+    },
 };
 main();
 // Deploy supabase starter kit to fly.io
@@ -77,7 +81,9 @@ async function main() {
     await deployAuth(defaultArgs);
     await deployCleanUp();
     await deployKong(defaultArgs);
-    await launchTest();
+    await apiGatewayTest();
+    await deployStudio(defaultArgs);
+    await studioTest();
 }
 // ---------------------------------------------
 // You are enterning function forest
@@ -188,6 +194,45 @@ async function updateFlyDBRoles(path) {
     await execAsync(flyProcess1);
     await execAsync(flyProcess2);
 }
+async function deployStudio(userDefaultArgs) {
+    let studioName;
+    if (!options.yes) {
+        studioName = await input({
+            message: "Enter a name for your Supabase Studio instance, or leave blank for a generated one",
+        });
+    }
+    const studioSpinner = ora({
+        text: "Deploying Supabase Studio",
+        color: "yellow",
+    }).start();
+    // if we dont have a name passed in, we need to generate one
+    const nameCommands = studioName
+        ? ["--name", studioName]
+        : ["--generate-name"];
+    // create array of commands
+    const studioLaunchCommandArray = ["launch"].concat(launchDefaultArgs, userDefaultArgs, nameCommands);
+    const secrets = {
+        DEFAULT_PROJECT_NAME: "SupaFly",
+        SUPABASE_PUBLIC_URL: `https://${globalInfo.kong.publicUrl}.fly.dev`,
+        STUDIO_PG_META_URL: `https://${globalInfo.kong.publicUrl}.fly.dev/pg`,
+        SUPABASE_ANON_KEY: globalInfo.jwtTokens.anonToken,
+        SUPABASE_SERVICE_KEY: globalInfo.jwtTokens.serviceToken,
+        SENTRY_IGNORE_API_RESOLUTION_ERROR: 1,
+        DEFAULT_ORGANIZATION_NAME: "SupaFly Starter Project",
+        POSTGRES_PASSWORD: "password",
+        LOGFLARE_URL: "https://api.logflare.app/logs",
+        LOGFLARE_API_KEY: "2321",
+        NEXT_PUBLIC_SITE_URL: "http://localhost:300",
+        NEXT_PUBLIC_GOTRUE_URL: `https://${globalInfo.kong.publicUrl}.fly.dev/auth/v1`,
+        NEXT_PUBLIC_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000001",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: globalInfo.jwtTokens.anonToken,
+        NEXT_PUBLIC_SUPABASE_URL: `https://${globalInfo.kong.publicUrl}.fly.dev`,
+    };
+    globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(studioLaunchCommandArray, "../studio", secrets);
+    await allocatePublicIPs("../studio");
+    studioSpinner.stop();
+    console.log(chalk.green("Supabase Studio deployed"));
+}
 async function deployKong(userDefaultArgs) {
     let kongName;
     if (!options.yes) {
@@ -243,6 +288,7 @@ async function deployPGREST(userDefaultArgs) {
     await allocatePublicIPs("../pg-rest");
     globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
     pgRestSpinner.stop();
+    console.log(chalk.green("PostgREST deployed"));
     return;
 }
 async function deployAuth(userDefaultArgs) {
@@ -511,10 +557,6 @@ async function getInternalIPV6Address(projPath) {
     if (match) {
         ipv6 = match[1];
     }
-    else {
-        console.error("IPv6 address not found: ", projPath);
-        console.error(result);
-    }
     return ipv6;
 }
 async function updatePGMetaDockerFilePGHost(filePath, newInternalAddress) {
@@ -528,16 +570,17 @@ async function updatePGMetaDockerFilePGHost(filePath, newInternalAddress) {
         console.error(err);
     }
 }
-async function launchTest() {
+async function apiGatewayTest() {
     var _a;
-    const browser = process.platform === "win32" ? "cmd.exe" : "open";
     globalInfo.kong.publicUrl = (_a = (await getNameFromFlyStatus("../kong"))) !== null && _a !== void 0 ? _a : "";
-    const link = `https://www.${globalInfo.kong.publicUrl}.fly.dev/test`;
-    const openLink = spawn(browser, ["/c", "start", "", link], {
-        detached: true,
-        stdio: "ignore",
-    });
-    openLink.unref();
+    const link = `https://${globalInfo.kong.publicUrl}.fly.dev/test`;
+    console.log("Click this link to test your Supabase deployment:", chalk.green(link));
+}
+async function studioTest() {
+    var _a;
+    globalInfo.studio.publicUrl = (_a = (await getNameFromFlyStatus("../studio"))) !== null && _a !== void 0 ? _a : "";
+    const studioLink = `https://${globalInfo.studio.publicUrl}.fly.dev`;
+    console.log("Click this link to visir your Supabase studio:", chalk.green(studioLink));
 }
 function generateSupaJWTs() {
     var signingKey = secureRandom(256, { type: "Buffer" });
@@ -649,8 +692,7 @@ services:
 
 ## Secure REST routes
 - name: rest-v1
-  host: "${globalInfo.pgRest.name}.fly.dev"
-  port: 3000
+  url: "https://${globalInfo.pgRest.name}.fly.dev/"
   routes:
     - name: rest-v1-all
       strip_path: true

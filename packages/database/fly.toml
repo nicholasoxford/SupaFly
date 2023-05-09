@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for restless-leaf-8479 on 2023-05-08T13:00:40-06:00
+# fly.toml app configuration file generated for long-waterfall-1171 on 2023-05-08T20:13:27-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "restless-leaf-8479"
+app = "long-waterfall-1171"
 primary_region = "lax"
 kill_timeout = "5m0s"
 

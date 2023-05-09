@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for damp-sun-4529 on 2023-05-08T13:04:16-06:00
+# fly.toml app configuration file generated for blue-sound-9398 on 2023-05-08T19:34:59-06:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "damp-sun-4529"
+app = "blue-sound-9398"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
