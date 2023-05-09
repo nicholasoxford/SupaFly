@@ -39,6 +39,13 @@ pnpm takeoff
 
 <img width="546" alt="PNG image" src="https://user-images.githubusercontent.com/51415676/236983392-fa4631ab-90c7-44c7-83dd-db470bc3d7f8.png">
 
+## Infastrcuture Deployed
+- Supabase flavor, postgres database
+- [Postgres-meta](https://github.com/supabase/postgres-meta)
+- [Supabase Auth Service](https://github.com/supabase/auth-helpers)
+- [PostgREST](https://github.com/PostgREST/postgrest)
+- [Api Gateway (kong)](https://docs.konghq.com/gateway/latest/production/deployment-topologies/db-less-and-declarative-config/)
+- [Supabase Studio](https://github.com/supabase/supabase/tree/master/studio)
 
 ## Things to work on
 
@@ -49,3 +56,9 @@ pnpm takeoff
 - Better name generatortion for supabase services
 
 [SupaFly Progress Tracker](https://github.com/users/nicholasoxford/projects/1/views/1)
+
+## How I created this
+- Got inspired by @kiwicopple [Reddit comment](https://www.reddit.com/r/Supabase/comments/s9rdfd/globally_distributed_postgres_with_supabase/) about deploying Supabase DB to Fly
+- Took the supabase [Dockercompose](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) file and created fly services for each
+
+
