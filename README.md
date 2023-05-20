@@ -59,7 +59,7 @@ pnpm takeoff
 [SupaFly Progress Tracker](https://github.com/users/nicholasoxford/projects/1/views/1)
 
 ## How I created this
-- Got inspired by @kiwicopple [Reddit comment](https://www.reddit.com/r/Supabase/comments/s9rdfd/globally_distributed_postgres_with_supabase/) about deploying Supabase DB to Fly
-- Took the Supabase [Dockercompose](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) file and created fly services for each
+- Got inspired by @kiwicopple [reddit comment](https://www.reddit.com/r/Supabase/comments/s9rdfd/globally_distributed_postgres_with_supabase/) about deploying Supabase DB to Fly
+- Took the Supabase [docker-compose](https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml) file and created fly services for each
 
 
