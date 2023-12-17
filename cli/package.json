@@ -1,9 +1,12 @@
 {
   "name": "cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.mjs",
   "type": "module",
+  "bin": {
+    "supafly": "./dist/index.mjs"
+  },
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.mjs",
