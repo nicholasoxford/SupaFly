@@ -6,7 +6,7 @@ import chalk from "chalk";
 import ora, { Ora } from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
-import { readFile, writeFile, appendFile } from "fs/promises";
+import { readFile, writeFile  } from "fs/promises";
 import { generate, count } from "random-words";
 // Create cli program helper and options
 const program = new Command();
