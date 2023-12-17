@@ -9,8 +9,8 @@
     "takeoff": "cd cli && node dist/index.mjs -y"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-config-custom": "*",
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
     "prettier": "^2.5.1",
     "turbo": "latest"
   },
@@ -20,7 +20,7 @@
   "packageManager": "bun@1.0.18",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "cli/*"
+    "cli/*",
+    "packages/*"
   ]
 }

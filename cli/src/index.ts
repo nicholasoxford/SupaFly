@@ -7,7 +7,7 @@ import ora, { Ora } from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
 import { readFile, writeFile, appendFile } from "fs/promises";
-import randomWords from "random-words";
+import { generate, count } from "random-words";
 // Create cli program helper and options
 const program = new Command();
 program
@@ -391,7 +391,7 @@ async function deployAuth(userDefaultArgs: string[]) {
     "../apps/auth"
   );
   const secrets = {
-    PROJECT_ID: `supafly-${randomWords(1)}-${randomWords(1)}`,
+    PROJECT_ID: `supafly-${generate(1)}-${generate(1)}`,
     AUTH_EXTERNAL_GITHUB: "true",
     AUTH_SITE_URL: "https://example.com",
     GOTRUE_JWT_EXP: "86400",
