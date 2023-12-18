@@ -10,7 +10,14 @@ import { DEFAULT_POOL_CONFIG } from '../constants.js'
 import { extractRequestForLogging } from '../utils.js'
 
 const route: FastifyPluginAsyncTypebox = async (fastify) => {
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Querystring: {
+      include_system_schemas?: boolean
+      limit?: number
+      offset?: number
+    }
+  }>(
     '/',
     {
       schema: {
@@ -49,7 +56,12 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {
@@ -84,7 +96,13 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.post(
+  fastify.post<{
+    Headers: { pg: string }
+    Body: {
+      name: string
+      comment?: string
+    }
+  }>(
     '/',
     {
       schema: {
@@ -116,7 +134,16 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.patch(
+  fastify.patch<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+    Body: {
+      name?: string
+      comment?: string
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {
@@ -156,7 +183,15 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.delete(
+  fastify.delete<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+    Querystring: {
+      cascade?: boolean
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {

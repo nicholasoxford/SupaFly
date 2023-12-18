@@ -10,7 +10,18 @@ import { DEFAULT_POOL_CONFIG } from '../constants.js'
 import { extractRequestForLogging, translateErrorToResponseCode } from '../utils.js'
 
 const route: FastifyPluginAsyncTypebox = async (fastify) => {
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Querystring: {
+      include_system_schemas?: boolean
+      // Note: this only supports comma separated values (e.g., ".../tables?included_schemas=public,core")
+      included_schemas?: string
+      excluded_schemas?: string
+      limit?: number
+      offset?: number
+      include_columns?: boolean
+    }
+  }>(
     '/',
     {
       schema: {
@@ -63,7 +74,12 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {
@@ -98,7 +114,17 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.post(
+  fastify.post<{
+    Headers: { pg: string }
+    Body: {
+      name: string
+      schema: string
+      description?: string
+      is_view?: boolean
+      is_materialized_view?: boolean
+      is_insertable_into?: boolean
+    }
+  }>(
     '/',
     {
       schema: {
@@ -130,7 +156,20 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.patch(
+  fastify.patch<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+    Body: {
+      name?: string
+      schema?: string
+      description?: string
+      is_view?: boolean
+      is_materialized_view?: boolean
+      is_insertable_into?: boolean
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {
@@ -170,7 +209,15 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.delete(
+  fastify.delete<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+    Querystring: {
+      cascade?: boolean
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {

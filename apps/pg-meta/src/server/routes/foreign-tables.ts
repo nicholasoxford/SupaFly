@@ -6,7 +6,14 @@ import { DEFAULT_POOL_CONFIG } from '../constants.js'
 import { extractRequestForLogging } from '../utils.js'
 
 const route: FastifyPluginAsyncTypebox = async (fastify) => {
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Querystring: {
+      limit?: number
+      offset?: number
+      include_columns?: boolean
+    }
+  }>(
     '/',
     {
       schema: {
@@ -45,7 +52,12 @@ const route: FastifyPluginAsyncTypebox = async (fastify) => {
     }
   )
 
-  fastify.get(
+  fastify.get<{
+    Headers: { pg: string }
+    Params: {
+      id: number
+    }
+  }>(
     '/:id(\\d+)',
     {
       schema: {
