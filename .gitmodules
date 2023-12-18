@@ -1,3 +1,6 @@
 [submodule "apps/pg-meta2"]
 	path = apps/pg-meta2
 	url = https://github.com/supabase/postgres-meta
+[submodule "apps/pg-meta"]
+	path = apps/pg-meta
+	url = https://github.com/supabase/postgres-meta
