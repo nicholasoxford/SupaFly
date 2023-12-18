@@ -15,12 +15,7 @@
     "turbo": "latest",
     "typescript": "^5.3.3"
   },
-  "dependencies": {
-    "@inquirer/prompts": "^1.0.0"
-  },
-  "packageManager": "bun@1.0.18",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+
+  "packageManager": "pnpm@7.15.0"
+
 }

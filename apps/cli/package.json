@@ -1,22 +1,22 @@
 {
   "name": "supafly",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
-  "main": "dist/index.js",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "dist/index.js",
   "bin": {
     "supa": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "bun dist/index.js",
-    "skip": "bun src/index.ts -y -r lax --org supabased ",
     "dev": "bun --watch src/index.ts",
+    "skip": "bun src/index.ts -y -r lax --org supabased ",
+    "start": "bun dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@inquirer/core": "^1.0.1",
     "@inquirer/prompts": "^3.3.0",
@@ -48,3 +48,4 @@
     "typescript": "^5.3.3"
   }
 }
+
