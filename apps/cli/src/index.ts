@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import figlet from "figlet";
 import { Command, OptionValues } from "commander";
@@ -6,7 +8,7 @@ import chalk from "chalk";
 import ora, { Ora } from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
-import { readFile, writeFile  } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { generate, count } from "random-words";
 // Create cli program helper and options
 const program = new Command();
@@ -22,7 +24,7 @@ const options = program.opts();
 
 // Cool CLI font when starting CLI tool
 console.log(figlet.textSync("Supa", "Larry 3D"));
-console.log(figlet.textSync("Based", "Larry 3D"));
+console.log(figlet.textSync("Fly", "Larry 3D"));
 
 // Globally available info variable
 let globalInfo: cliInfo = {
@@ -151,22 +153,24 @@ async function choseDefaultRegions() {
   ];
   const regionsSpawn = spawn("fly", ["platform", "regions"]);
   const regions = await execAsync(regionsSpawn);
+  console.log("REGIONS here:   ", regions);
   const regionChoices = regions.split("\n").slice(1);
   for (let i = 0; i < regionChoices.length; i++) {
     const infoArray = regionChoices[i].split(`\t`);
     if (infoArray[1] && infoArray[0]) {
       options.push({
-        city: infoArray[1],
-        code: infoArray[0].trim(),
+        city: infoArray[0].trim(),
+        code: infoArray[1].trim(),
       });
     }
   }
   options = options.filter((o) => o.city !== "");
+
   return await select({
     message: "Select a default region",
     choices: options.map((o) => {
       return {
-        name: o.city + " " + o.code,
+        name: o.city + " - " + o.code,
         value: o.code,
       };
     }),
@@ -190,7 +194,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
   await updatePGMetaDockerFilePGHost(
-    "../apps/pg-meta/Dockerfile",
+    "../pg-meta/Dockerfile",
     globalInfo.database.ipv6
   );
   // create array of commands
@@ -203,7 +207,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
     metalaunchCommandArray,
-    "../apps/pg-meta"
+    "../pg-meta"
   );
   metaSpinner.stop();
   console.log(chalk.green("Metadata deployed"));
@@ -273,11 +277,11 @@ async function deployStudio(userDefaultArgs: string[]) {
   };
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     studioLaunchCommandArray,
-    "../apps/studio",
+    "../studio",
     secrets
   );
 
-  await allocatePublicIPs("../apps/studio");
+  await allocatePublicIPs("../studio");
 
   studioSpinner.stop();
   console.log(chalk.green("Supabase Studio deployed"));
@@ -309,16 +313,16 @@ async function deployKong(userDefaultArgs: string[]) {
   await createkongYaml();
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     kongLaunchCommandArray,
-    "../apps/kong"
+    "../kong"
   );
-  await allocatePublicIPs("../apps/kong");
+  await allocatePublicIPs("../kong");
   kongSpinner.stop();
   console.log(chalk.green("Kong deployed"));
   return;
 }
 //Deploying postgresT
 async function deployPGREST(userDefaultArgs: string[]) {
-  await updateFlyDBRoles("../apps/apps/database");
+  await updateFlyDBRoles("../database");
   let postgrestName;
   if (!options.yes) {
     postgrestName = await input({
@@ -354,11 +358,11 @@ async function deployPGREST(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
     pgLaunchCommandArray,
-    "../apps/pg-rest",
+    "../pg-rest",
     secrets
   );
-  await allocatePublicIPs("../apps/pg-rest");
-  globalInfo.pgRest.name = await getNameFromFlyStatus("../apps/pg-rest");
+  await allocatePublicIPs("../pg-rest");
+  globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
   pgRestSpinner.stop();
   console.log(chalk.green("PostgREST deployed"));
   return;
@@ -388,7 +392,7 @@ async function deployAuth(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(
     authLaunchCommandArray,
-    "../apps/auth"
+    "../auth"
   );
   const secrets = {
     PROJECT_ID: `supafly-${generate(1)}-${generate(1)}`,
@@ -413,7 +417,7 @@ async function deployAuth(userDefaultArgs: string[]) {
     }:5432/postgres`,
   };
 
-  await setFlySecrets(secrets, "../apps/auth");
+  await setFlySecrets(secrets, "../auth");
   authSpinner.stop();
   console.log(chalk.green("Auth deployed"));
   return;
@@ -428,24 +432,29 @@ async function setFlySecrets(secrets: any, path: string) {
 }
 async function deployCleanUp() {
   if (!globalInfo.pgRest.ipv6) {
-    globalInfo.pgRest.name = await getNameFromFlyStatus("../apps/pg-rest");
+    globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
   }
   if (!globalInfo.pgAuth.ipv6) {
-    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../apps/pg-auth");
+    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-auth");
   }
   if (!globalInfo.pgMeta.ipv6) {
-    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../apps/pg-meta");
+    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
   }
 }
 async function deployDatabase(userDefaultArgs: string[]) {
   let dbName;
-  const dbPath = "../apps/../packages/database";
+  const dbPath = "../database";
   if (!options.yes) {
     dbName = await input({
       message:
         "Enter a name for your database, or leave blank for a generated one",
     });
   }
+  const dbSpinner = ora({
+    text: `Deploying your database...`,
+    color: "yellow",
+  }).start();
+
   // if we dont have a name passed in, we need to generate one
   const nameCommands = dbName ? ["--name", dbName] : ["--generate-name"];
 
@@ -455,6 +464,9 @@ async function deployDatabase(userDefaultArgs: string[]) {
     userDefaultArgs,
     nameCommands
   );
+  // i want to get the path of where stuff is being executed right now
+  const currentPath = process.cwd();
+  console.log("current path: ", currentPath);
 
   // run fly launch --no-deploy to allocate app
   const dbLaunch = spawn("fly", launchCommandArray, {
@@ -468,6 +480,7 @@ async function deployDatabase(userDefaultArgs: string[]) {
   // wait 2 seconds for the database to start
   setTimeout(() => {}, 2500);
   setTimeout(() => {}, 2000);
+  dbSpinner.stop();
   return await getInternalIPV6Address(dbPath);
 }
 
@@ -478,9 +491,11 @@ async function createFlyVolume(path: string) {
     "create",
     "pg_data",
     "--region",
-    "lax",
+    globalInfo.defaultRegion,
     "--size",
     "3",
+    "-n",
+    "2",
   ];
 
   const flyProcess = spawn(command, args, {
@@ -497,7 +512,12 @@ async function scaleMemoryFly(path: string, memory: number) {
   await execAsync(machine);
 }
 
+/**
+ * @description Executes a child process and returns the response from stdout
+ * @param spawn
+ */
 async function execAsync(spawn: ChildProcessWithoutNullStreams) {
+  console.log("full command: ", spawn.spawnargs.join(" "));
   let response = "";
   spawn.on("error", (err) => {
     console.log(`error: ${err.message}`);
@@ -505,6 +525,18 @@ async function execAsync(spawn: ChildProcessWithoutNullStreams) {
 
   spawn.stderr.on("error", (data) => {
     console.log(`stderr: ${data}`);
+  });
+
+  spawn.on("error", (err) => {
+    console.error(`error message: ${err}`);
+    throw err; // Throw the error to propagate it to the caller
+  });
+  spawn.on("exit", (code, signal) => {
+    if (code !== 0) {
+      console.error(
+        `child process exited with code ${code} and signal ${signal}`
+      );
+    }
   });
 
   for await (const data of spawn.stdout) {
@@ -579,13 +611,8 @@ async function flySetDefaultOrg() {
 
 async function flyDeployAndPrepareDB(defaultArgs: string[]) {
   if (!options.dbUrl) {
-    const dbSpinner = ora({
-      text: `Deploying your database...`,
-      color: "yellow",
-    }).start();
     // deploy database
     globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
-    dbSpinner.stop();
     console.log(chalk.green("You successfully deployed your database!"));
   }
 }
@@ -624,7 +651,8 @@ async function getNameFromFlyStatus(path: string) {
 }
 
 async function flyDeploy(path: string) {
-  const flyDeploy = spawn("fly", ["deploy"], {
+  console.log("Current path: ", process.cwd());
+  const flyDeploy = spawn("fly", ["deploy", "--vm-memory", "1024"], {
     cwd: path,
   });
   return await execAsync(flyDeploy);
@@ -668,8 +696,7 @@ async function updatePGMetaDockerFilePGHost(
 }
 
 async function apiGatewayTest() {
-  globalInfo.kong.publicUrl =
-    (await getNameFromFlyStatus("../apps/kong")) ?? "";
+  globalInfo.kong.publicUrl = (await getNameFromFlyStatus("../kong")) ?? "";
   const link = `https://${globalInfo.kong.publicUrl}.fly.dev/test`;
   console.log(
     "Click this link to test your Supabase deployment:",
@@ -677,8 +704,7 @@ async function apiGatewayTest() {
   );
 }
 async function studioTest() {
-  globalInfo.studio.publicUrl =
-    (await getNameFromFlyStatus("../apps/studio")) ?? "";
+  globalInfo.studio.publicUrl = (await getNameFromFlyStatus("../studio")) ?? "";
   const studioLink = `https://${globalInfo.studio.publicUrl}.fly.dev`;
   console.log(
     "Click this link to visit your Supabase studio:",
@@ -827,7 +853,7 @@ services:
         - /pg/
 
   `;
-  await writeFile("../apps/kong/kong.yml", kongYaml, "utf8");
+  await writeFile("../kong/kong.yml", kongYaml, "utf8");
   return;
 }
 
@@ -835,6 +861,7 @@ const launchDefaultArgs = [
   "--no-deploy",
   "--copy-config",
   "--reuse-app",
+  "--legacy",
   "--force-machines",
 ];
 

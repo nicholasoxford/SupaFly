@@ -1,11 +1,13 @@
-# fly.toml app configuration file generated for little-hill-7726 on 2023-05-09T07:18:05-06:00
+# fly.toml app configuration file generated for tryoneagain2 on 2023-12-17T22:20:36-07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "little-hill-7726"
+app = "tryoneagain2"
 primary_region = "lax"
 kill_timeout = "5m0s"
+
+[build]
 
 [http_service]
   internal_port = 5432

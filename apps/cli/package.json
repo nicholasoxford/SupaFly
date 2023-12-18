@@ -1,6 +1,6 @@
 {
   "name": "supafly",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "",
   "keywords": [],
   "license": "ISC",
@@ -11,10 +11,10 @@
     "supa": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "bun --watch src/index.ts",
-    "skip": "bun src/index.ts -y -r lax --org supabased ",
-    "start": "bun dist/index.js",
+    "build": "npx tsc",
+    "start": "node dist/index.js",
+    "skip": "npx tsc && node dist/index.js -y -r lax --org supabased ",
+    "dev": "npx tsc-watch --onSuccess \"node ./dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -48,4 +48,3 @@
     "typescript": "^5.3.3"
   }
 }
-
