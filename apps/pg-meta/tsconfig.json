@@ -4,11 +4,11 @@
     "incremental": true,
     "declaration": true,
     "declarationMap": true,
-    "module": "esnext",
+    "module": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
     "sourceMap": true,
-    "target": "esnext",
+    "target": "ESNext",
 
     "strict": true,
 

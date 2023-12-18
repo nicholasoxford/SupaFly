@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
+    "skipLibCheck": true,
     "rootDir": "src",
     "outDir": "dist",
     "strict": true,
-    "target": "ES2017",
-    "module": "ES6",
+    "target": "ESNext",
+    "module": "NodeNext",
     "sourceMap": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node"
+    "esModuleInterop": true
   }
 }
