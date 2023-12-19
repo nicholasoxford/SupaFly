@@ -10,6 +10,8 @@ import njwt from "njwt";
 import secureRandom from "secure-random";
 import { readFile, writeFile } from "fs/promises";
 import { generate, count } from "random-words";
+import * as path from "path";
+
 // Create cli program helper and options
 const program = new Command();
 program
@@ -55,6 +57,7 @@ let globalInfo: cliInfo = {
     ipv6: "",
     publicUrl: "",
   },
+  defaultArgs: [],
 };
 
 main();
@@ -75,9 +78,10 @@ async function main() {
 
   // turn our info object into default fly args
   const defaultArgs = getDefaultFlyArgs(globalInfo);
+  globalInfo.defaultArgs = defaultArgs;
 
   // deploy database
-  await flyDeployAndPrepareDB(defaultArgs);
+  await flyDeployAndPrepareDB();
 
   // deploy api
   await deployPGMeta(defaultArgs);
@@ -153,7 +157,6 @@ async function choseDefaultRegions() {
   ];
   const regionsSpawn = spawn("fly", ["platform", "regions"]);
   const regions = await execAsync(regionsSpawn);
-  console.log("REGIONS here:   ", regions);
   const regionChoices = regions.split("\n").slice(1);
   for (let i = 0; i < regionChoices.length; i++) {
     const infoArray = regionChoices[i].split(`\t`);
@@ -441,9 +444,9 @@ async function deployCleanUp() {
     globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
   }
 }
-async function deployDatabase(userDefaultArgs: string[]) {
+async function deployDatabase() {
   let dbName;
-  const dbPath = "../database";
+  const dbPath = "src/database";
   if (!options.yes) {
     dbName = await input({
       message:
@@ -459,11 +462,15 @@ async function deployDatabase(userDefaultArgs: string[]) {
   const nameCommands = dbName ? ["--name", dbName] : ["--generate-name"];
 
   // create array of commands
-  const launchCommandArray = ["launch", "--internal-port", "5432"].concat(
-    launchDefaultArgs,
-    userDefaultArgs,
-    nameCommands
-  );
+  const launchCommandArray = [
+    "launch",
+    "--internal-port",
+    "5432",
+    "--vm-memory",
+    "1024",
+    "--volume-initial-size",
+    "3",
+  ].concat(launchDefaultArgs, globalInfo.defaultArgs, nameCommands);
   // i want to get the path of where stuff is being executed right now
   const currentPath = process.cwd();
   console.log("current path: ", currentPath);
@@ -474,9 +481,9 @@ async function deployDatabase(userDefaultArgs: string[]) {
   });
   await execAsync(dbLaunch);
   await allocatePrivateIPV6(dbPath);
-  await createFlyVolume(dbPath);
+  // await createFlyVolume(dbPath);
   await flyDeploy(dbPath);
-  await scaleMemoryFly(dbPath, 1024);
+  // await scaleMemoryFly(dbPath, 1024);
   // wait 2 seconds for the database to start
   setTimeout(() => {}, 2500);
   setTimeout(() => {}, 2000);
@@ -609,10 +616,10 @@ async function flySetDefaultOrg() {
   );
 }
 
-async function flyDeployAndPrepareDB(defaultArgs: string[]) {
+async function flyDeployAndPrepareDB() {
   if (!options.dbUrl) {
     // deploy database
-    globalInfo.database.ipv6 = await deployDatabase(defaultArgs);
+    globalInfo.database.ipv6 = await deployDatabase();
     console.log(chalk.green("You successfully deployed your database!"));
   }
 }
@@ -892,6 +899,7 @@ type cliInfo = {
     ipv6: string;
     publicUrl: string;
   };
+  defaultArgs: string[];
 };
 
 type serviceInfo = {

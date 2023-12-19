@@ -8,5 +8,6 @@
     "module": "NodeNext",
     "sourceMap": true,
     "esModuleInterop": true
-  }
+  },
+  "include": ["src/**/*"]
 }
