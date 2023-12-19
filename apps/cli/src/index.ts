@@ -20,7 +20,7 @@ program
   .option("-O, --org  [value]", "Fly.io Target Organization")
   .option("-y, --yes", "Skip prompts and deploy")
   .option("-r, --region [value]", "Fly.io Target Region")
-  .option("--dbUrl [value]", "Fly.io Target Region")
+  .option("--dbUrl [value]", "Existing Database URL")
   .parse(process.argv);
 const options = program.opts();
 
@@ -60,7 +60,8 @@ let globalInfo: cliInfo = {
   },
   defaultArgs: [],
 };
-
+const dbPath = "src/database";
+const pgRestPath = "src/pg-rest";
 main();
 
 // Deploy supabase starter kit to fly.io
@@ -103,10 +104,6 @@ async function main() {
   await studioTest();
 }
 
-// ---------------------------------------------
-// You are enterning function forest
-// Proceed with caution
-// ---------------------------------------------
 // Create default cli args like org and region to make life easier
 function getDefaultFlyArgs(args: cliInfo) {
   let argsArray = ["--force-machines", "--auto-confirm"];
@@ -195,12 +192,15 @@ async function deployPGMeta(userDefaultArgs: string[]) {
     text: "Deploying metadata",
     color: "yellow",
   }).start();
+
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
+
   await updatePGMetaDockerFilePGHost(
     "../pg-meta/Dockerfile",
     globalInfo.database.ipv6
   );
+
   // create array of commands
   const metalaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
@@ -326,7 +326,7 @@ async function deployKong(userDefaultArgs: string[]) {
 }
 //Deploying postgresT
 async function deployPGREST(userDefaultArgs: string[]) {
-  await updateFlyDBRoles("../database");
+  await updateFlyDBRoles(dbPath);
   let postgrestName;
   if (!options.yes) {
     postgrestName = await input({
@@ -362,11 +362,11 @@ async function deployPGREST(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgRest.ipv6 = await flyLaunchDeployInternalIPV6(
     pgLaunchCommandArray,
-    "../pg-rest",
+    pgRestPath,
     secrets
   );
-  await allocatePublicIPs("../pg-rest");
-  globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+  await allocatePublicIPs(pgRestPath);
+  globalInfo.pgRest.name = await getNameFromFlyStatus(pgRestPath);
   pgRestSpinner.stop();
   console.log(chalk.green("PostgREST deployed"));
   return;
@@ -436,7 +436,7 @@ async function setFlySecrets(secrets: any, path: string) {
 }
 async function deployCleanUp() {
   if (!globalInfo.pgRest.ipv6) {
-    globalInfo.pgRest.name = await getNameFromFlyStatus("../pg-rest");
+    globalInfo.pgRest.name = await getNameFromFlyStatus(pgRestPath);
   }
   if (!globalInfo.pgAuth.ipv6) {
     globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-auth");
@@ -638,7 +638,6 @@ async function flySetDefaultOrg() {
 async function flyDeployAndPrepareDB() {
   if (!options.dbUrl) {
     // deploy database
-    const dbPath = "src/database";
     await deployDatabase(dbPath);
     const dbStatusSpinner = ora({
       text: "getting database ipv6 address",

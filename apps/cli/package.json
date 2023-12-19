@@ -13,6 +13,7 @@
   "files": [
     "dist",
     "src/database/Dockerfile",
+    "src/pg-rest/Dockerfile",
     "src/database/pg_hba.conf"
   ],
   "scripts": {
