@@ -62,6 +62,7 @@ let globalInfo: cliInfo = {
 };
 const dbPath = "src/database";
 const pgRestPath = "src/pg-rest";
+const authPath = "src/auth";
 main();
 
 // Deploy supabase starter kit to fly.io
@@ -396,7 +397,7 @@ async function deployAuth(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgAuth.ipv6 = await flyLaunchDeployInternalIPV6(
     authLaunchCommandArray,
-    "../auth"
+    authPath
   );
   const secrets = {
     PROJECT_ID: `supafly-${generate(1)}-${generate(1)}`,
