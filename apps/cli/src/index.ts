@@ -48,6 +48,7 @@ let globalInfo: cliInfo = {
   },
   database: {
     ipv6: "",
+    name: "",
   },
   kong: {
     ipv6: "",
@@ -444,51 +445,78 @@ async function deployCleanUp() {
     globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
   }
 }
-async function deployDatabase() {
-  let dbName;
-  const dbPath = "src/database";
+async function deployDatabase(dbPath: string) {
+  // If they passed in yes, we need to generate a name
   if (!options.yes) {
-    dbName = await input({
+    globalInfo.database.name = await input({
       message:
         "Enter a name for your database, or leave blank for a generated one",
     });
   }
+
   const dbSpinner = ora({
-    text: `Deploying your database...`,
-    color: "yellow",
+    text: `Creating an application Fly.io's region ${globalInfo.defaultRegion} to host your database`,
+    color: "blue",
   }).start();
 
   // if we dont have a name passed in, we need to generate one
-  const nameCommands = dbName ? ["--name", dbName] : ["--generate-name"];
+  const nameCommands = globalInfo.database.name
+    ? ["--name", globalInfo.database.name]
+    : ["--generate-name"];
 
   // create array of commands
-  const launchCommandArray = [
-    "launch",
-    "--internal-port",
-    "5432",
-    "--vm-memory",
-    "1024",
-    "--volume-initial-size",
-    "3",
-  ].concat(launchDefaultArgs, globalInfo.defaultArgs, nameCommands);
+  const launchCommandArray = ["launch", "--internal-port", "5432"].concat(
+    launchDefaultArgs,
+    globalInfo.defaultArgs,
+    nameCommands
+  );
   // i want to get the path of where stuff is being executed right now
-  const currentPath = process.cwd();
-  console.log("current path: ", currentPath);
 
   // run fly launch --no-deploy to allocate app
   const dbLaunch = spawn("fly", launchCommandArray, {
     cwd: dbPath,
   });
   await execAsync(dbLaunch);
+
+  dbSpinner.stop();
+  const ipv6Spinner = ora({
+    text: "Allocating private ipv6 address for your database",
+    color: "yellow",
+  }).start();
+
   await allocatePrivateIPV6(dbPath);
-  // await createFlyVolume(dbPath);
-  await flyDeploy(dbPath);
-  // await scaleMemoryFly(dbPath, 1024);
+
+  ipv6Spinner.stop();
+  const volumeSpinner = ora({
+    text: "Creating a volume for your database",
+    color: "yellow",
+  }).start();
+
+  await createFlyVolume(dbPath);
+
+  volumeSpinner.stop();
+  const scaleSpinner = ora({
+    text: "Scaling your database to 1GB of memory and deploying to Fly.io 👟",
+    color: "yellow",
+  }).start();
+
+  await flyDeploy(dbPath, [
+    "--vm-memory",
+    "1024",
+    "--volume-initial-size",
+    "3",
+  ]);
+
+  scaleSpinner.stop();
+  const dbStatusSpinner = ora({
+    text: "Waiting for your database to start",
+    color: "yellow",
+  }).start();
+
   // wait 2 seconds for the database to start
   setTimeout(() => {}, 2500);
   setTimeout(() => {}, 2000);
-  dbSpinner.stop();
-  return await getInternalIPV6Address(dbPath);
+  dbStatusSpinner.stop();
 }
 
 async function createFlyVolume(path: string) {
@@ -511,20 +539,11 @@ async function createFlyVolume(path: string) {
   await execAsync(flyProcess);
 }
 
-async function scaleMemoryFly(path: string, memory: number) {
-  const machine = spawn("fly", ["scale", "memory", memory.toString()], {
-    cwd: path,
-  });
-
-  await execAsync(machine);
-}
-
 /**
  * @description Executes a child process and returns the response from stdout
  * @param spawn
  */
 async function execAsync(spawn: ChildProcessWithoutNullStreams) {
-  console.log("full command: ", spawn.spawnargs.join(" "));
   let response = "";
   spawn.on("error", (err) => {
     console.log(`error: ${err.message}`);
@@ -619,7 +638,14 @@ async function flySetDefaultOrg() {
 async function flyDeployAndPrepareDB() {
   if (!options.dbUrl) {
     // deploy database
-    globalInfo.database.ipv6 = await deployDatabase();
+    const dbPath = "src/database";
+    await deployDatabase(dbPath);
+    const dbStatusSpinner = ora({
+      text: "getting database ipv6 address",
+      color: "yellow",
+    }).start();
+    globalInfo.database.ipv6 = await getInternalIPV6Address(dbPath);
+    dbStatusSpinner.stop();
     console.log(chalk.green("You successfully deployed your database!"));
   }
 }
@@ -657,9 +683,9 @@ async function getNameFromFlyStatus(path: string) {
   }
 }
 
-async function flyDeploy(path: string) {
-  console.log("Current path: ", process.cwd());
-  const flyDeploy = spawn("fly", ["deploy", "--vm-memory", "1024"], {
+async function flyDeploy(path: string, args: string[] = []) {
+  const commands = ["deploy"].concat(args);
+  const flyDeploy = spawn("fly", commands, {
     cwd: path,
   });
   return await execAsync(flyDeploy);

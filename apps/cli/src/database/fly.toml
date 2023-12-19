@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for autumn-wood-2386 on 2023-12-18T20:51:45-07:00
+# fly.toml app configuration file generated for falling-surf-7159 on 2023-12-18T21:17:22-07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "autumn-wood-2386"
+app = "falling-surf-7159"
 primary_region = "atl"
 
 [build]
