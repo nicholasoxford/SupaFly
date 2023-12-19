@@ -422,7 +422,7 @@ async function deployAuth(userDefaultArgs: string[]) {
     }:5432/postgres`,
   };
 
-  await setFlySecrets(secrets, "../auth");
+  await setFlySecrets(secrets, authPath);
   authSpinner.stop();
   console.log(chalk.green("Auth deployed"));
   return;
