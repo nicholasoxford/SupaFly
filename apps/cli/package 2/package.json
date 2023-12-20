@@ -12,13 +12,7 @@
   },
   "files": [
     "dist",
-    "src/database/Dockerfile",
-    "src/pg-rest/Dockerfile",
-    "src/database/pg_hba.conf",
-    "src/kong/Dockerfile",
-    "src/kong/kong.yml",
-    "src/pg-rest/Dockerfile",
-    "src/studio/Dockerfile"
+    "src/**/*"
   ],
   "scripts": {
     "build": "npx tsc",

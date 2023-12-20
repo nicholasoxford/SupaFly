@@ -63,6 +63,7 @@ const dbPath = "src/database";
 const pgRestPath = "src/pg-rest";
 const authPath = "src/auth";
 const studioPath = "src/studio";
+const kongPath = "src/kong";
 main();
 
 // Deploy supabase starter kit to fly.io
@@ -190,8 +191,8 @@ async function deployPGMeta(userDefaultArgs: string[]) {
     });
   }
   const metaSpinner = ora({
-    text: "Deploying metadata",
-    color: "yellow",
+    text: "Creating an application Fly.io's region ${globalInfo.defaultRegion} to host your PG metadata server",
+    color: "blue",
   }).start();
 
   // if we dont have a name passed in, we need to generate one
@@ -201,6 +202,12 @@ async function deployPGMeta(userDefaultArgs: string[]) {
     "../pg-meta/Dockerfile",
     globalInfo.database.ipv6
   );
+
+  metaSpinner.stop();
+  const deploySpinner = ora({
+    text: "Deploying postgres metadata server to Fly.io",
+    color: "yellow",
+  }).start();
 
   // create array of commands
   const metalaunchCommandArray = ["launch"].concat(
@@ -214,7 +221,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
     metalaunchCommandArray,
     "../pg-meta"
   );
-  metaSpinner.stop();
+  deploySpinner.stop();
   console.log(chalk.green("Metadata deployed"));
   return;
 }
@@ -318,9 +325,9 @@ async function deployKong(userDefaultArgs: string[]) {
   await createkongYaml();
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     kongLaunchCommandArray,
-    "../kong"
+    kongPath
   );
-  await allocatePublicIPs("../kong");
+  await allocatePublicIPs(kongPath);
   kongSpinner.stop();
   console.log(chalk.green("Kong deployed"));
   return;
@@ -729,7 +736,7 @@ async function updatePGMetaDockerFilePGHost(
 }
 
 async function apiGatewayTest() {
-  globalInfo.kong.publicUrl = (await getNameFromFlyStatus("../kong")) ?? "";
+  globalInfo.kong.publicUrl = (await getNameFromFlyStatus(kongPath)) ?? "";
   const link = `https://${globalInfo.kong.publicUrl}.fly.dev/test`;
   console.log(
     "Click this link to test your Supabase deployment:",
@@ -886,7 +893,8 @@ services:
         - /pg/
 
   `;
-  await writeFile("../kong/kong.yml", kongYaml, "utf8");
+  const KONG_YML_PATH = kongPath + "/kong.yml";
+  await writeFile(KONG_YML_PATH, kongYaml, "utf8");
   return;
 }
 
