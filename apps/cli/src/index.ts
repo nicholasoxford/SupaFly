@@ -64,6 +64,7 @@ const pgRestPath = "src/pg-rest";
 const authPath = "src/auth";
 const studioPath = "src/studio";
 const kongPath = "src/kong";
+const metaPath = "src/pg-meta";
 main();
 
 // Deploy supabase starter kit to fly.io
@@ -190,6 +191,15 @@ async function deployPGMeta(userDefaultArgs: string[]) {
         "Enter a name for your postgres metadata instance, or leave blank for a generated one",
     });
   }
+
+  // git clone https://github.com/supabase/postgres-meta
+  const gitClone = spawn("git", [
+    "clone",
+    "https://github.com/supabase/postgres-meta",
+    "./pg-meta",
+  ]);
+  await execAsyncLog(gitClone);
+
   const metaSpinner = ora({
     text: "Creating an application Fly.io's region ${globalInfo.defaultRegion} to host your PG metadata server",
     color: "blue",
@@ -197,11 +207,8 @@ async function deployPGMeta(userDefaultArgs: string[]) {
 
   // if we dont have a name passed in, we need to generate one
   const nameCommands = metaName ? ["--name", metaName] : ["--generate-name"];
-
-  await updatePGMetaDockerFilePGHost(
-    "../pg-meta/Dockerfile",
-    globalInfo.database.ipv6
-  );
+  const dockerFilePath = metaPath + "/Dockerfile";
+  await updatePGMetaDockerFilePGHost(dockerFilePath, globalInfo.database.ipv6);
 
   metaSpinner.stop();
   const deploySpinner = ora({
@@ -219,7 +226,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // run fly launch --no-deploy to allocate app
   globalInfo.pgMeta.ipv6 = await flyLaunchDeployInternalIPV6(
     metalaunchCommandArray,
-    "../pg-meta"
+    metaPath
   );
   deploySpinner.stop();
   console.log(chalk.green("Metadata deployed"));
@@ -447,10 +454,10 @@ async function deployCleanUp() {
     globalInfo.pgRest.name = await getNameFromFlyStatus(pgRestPath);
   }
   if (!globalInfo.pgAuth.ipv6) {
-    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address("../pg-auth");
+    globalInfo.pgAuth.ipv6 = await getInternalIPV6Address(authPath);
   }
   if (!globalInfo.pgMeta.ipv6) {
-    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address("../pg-meta");
+    globalInfo.pgMeta.ipv6 = await getInternalIPV6Address(metaPath);
   }
 }
 async function deployDatabase(dbPath: string) {
