@@ -9,8 +9,7 @@ import ora, { Ora } from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
 import { readFile, writeFile } from "fs/promises";
-import { generate, count } from "random-words";
-import * as path from "path";
+import { generate } from "random-words";
 
 // Create cli program helper and options
 const program = new Command();
@@ -63,6 +62,7 @@ let globalInfo: cliInfo = {
 const dbPath = "src/database";
 const pgRestPath = "src/pg-rest";
 const authPath = "src/auth";
+const studioPath = "src/studio";
 main();
 
 // Deploy supabase starter kit to fly.io
@@ -282,11 +282,11 @@ async function deployStudio(userDefaultArgs: string[]) {
   };
   globalInfo.kong.ipv6 = await flyLaunchDeployInternalIPV6(
     studioLaunchCommandArray,
-    "../studio",
+    studioPath,
     secrets
   );
 
-  await allocatePublicIPs("../studio");
+  await allocatePublicIPs(studioPath);
 
   studioSpinner.stop();
   console.log(chalk.green("Supabase Studio deployed"));
@@ -737,7 +737,7 @@ async function apiGatewayTest() {
   );
 }
 async function studioTest() {
-  globalInfo.studio.publicUrl = (await getNameFromFlyStatus("../studio")) ?? "";
+  globalInfo.studio.publicUrl = (await getNameFromFlyStatus(studioPath)) ?? "";
   const studioLink = `https://${globalInfo.studio.publicUrl}.fly.dev`;
   console.log(
     "Click this link to visit your Supabase studio:",
