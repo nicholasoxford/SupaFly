@@ -1,6 +1,6 @@
 {
   "name": "supafly",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "",
   "keywords": [],
   "license": "ISC",
@@ -12,8 +12,8 @@
   },
   "files": [
     "dist",
+    "src/auth/Dockerfile",
     "src/database/Dockerfile",
-    "src/pg-rest/Dockerfile",
     "src/database/pg_hba.conf",
     "src/kong/Dockerfile",
     "src/kong/kong.yml",

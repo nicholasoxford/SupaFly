@@ -72,9 +72,6 @@ async function main() {
   // check if fly cli is authenticated
   await flyAuth();
 
-  // generate service and anon tokens
-  generateSupaJWTs();
-
   // chose default region if not passed in
   await flySetDefaultRegion();
 
@@ -82,41 +79,50 @@ async function main() {
   await flySetDefaultOrg();
 
   // turn our info object into default fly args
-  const defaultArgs = getDefaultFlyArgs(globalInfo);
-  globalInfo.defaultArgs = defaultArgs;
+  setDefaultFlyArgs();
 
   // deploy database
   await flyDeployAndPrepareDB();
 
   // deploy api
-  await deployPGMeta(defaultArgs);
+  await deployPGMeta();
 
   // deploy postGREST
-  await deployPGREST(defaultArgs);
+  await deployPGREST();
 
-  await deployAuth(defaultArgs);
+  // generate service and anon tokens
+  generateSupaJWTs();
+
+  await deployAuth();
 
   await deployCleanUp();
 
-  await deployKong(defaultArgs);
+  await deployKong();
 
   await apiGatewayTest();
 
-  await deployStudio(defaultArgs);
+  await deployStudio();
 
   await studioTest();
 }
 
+async function flyAuth() {
+  const authSpinner = ora({
+    text: `Checking fly cli authorization...`,
+    color: "yellow",
+  }).start();
+
+  // grab username
+  globalInfo.username = await userAuth(options, authSpinner);
+  authSpinner.stop();
+  console.log("Deploying to fly.io as:", chalk.green(globalInfo.username));
+}
+
 // Create default cli args like org and region to make life easier
-function getDefaultFlyArgs(args: cliInfo) {
+function setDefaultFlyArgs() {
   let argsArray = ["--force-machines", "--auto-confirm"];
-  if (args.organization) {
-    argsArray.push("--org", args.organization);
-  }
-  if (args.defaultRegion) {
-    argsArray.push("--region", args.defaultRegion);
-  }
-  return argsArray;
+  globalInfo.defaultArgs = argsArray;
+  return;
 }
 
 async function userAuth(options: OptionValues, spinner: Ora) {
@@ -183,7 +189,7 @@ async function choseDefaultRegions() {
 
 // Fly io specific functions
 //Deploying postgres-meta
-async function deployPGMeta(userDefaultArgs: string[]) {
+async function deployPGMeta() {
   let metaName;
   if (!options.yes) {
     metaName = await input({
@@ -219,7 +225,7 @@ async function deployPGMeta(userDefaultArgs: string[]) {
   // create array of commands
   const metalaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
-    userDefaultArgs,
+    globalInfo.defaultArgs,
     nameCommands
   );
 
@@ -253,7 +259,7 @@ async function updateFlyDBRoles(path: string) {
   await execAsync(flyProcess1);
   await execAsync(flyProcess2);
 }
-async function deployStudio(userDefaultArgs: string[]) {
+async function deployStudio() {
   let studioName;
   if (!options.yes) {
     studioName = await input({
@@ -272,7 +278,7 @@ async function deployStudio(userDefaultArgs: string[]) {
   // create array of commands
   const studioLaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
-    userDefaultArgs,
+    globalInfo.defaultArgs,
     nameCommands
   );
 
@@ -306,7 +312,7 @@ async function deployStudio(userDefaultArgs: string[]) {
   console.log(chalk.green("Supabase Studio deployed"));
 }
 
-async function deployKong(userDefaultArgs: string[]) {
+async function deployKong() {
   let kongName;
   if (!options.yes) {
     kongName = await input({
@@ -324,7 +330,7 @@ async function deployKong(userDefaultArgs: string[]) {
   // create array of commands
   const kongLaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
-    userDefaultArgs,
+    globalInfo.defaultArgs,
     nameCommands
   );
   // run fly launch --no-deploy to allocate app
@@ -340,7 +346,7 @@ async function deployKong(userDefaultArgs: string[]) {
   return;
 }
 //Deploying postgresT
-async function deployPGREST(userDefaultArgs: string[]) {
+async function deployPGREST() {
   await updateFlyDBRoles(dbPath);
   let postgrestName;
   if (!options.yes) {
@@ -361,7 +367,7 @@ async function deployPGREST(userDefaultArgs: string[]) {
   // create array of commands
   const pgLaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
-    userDefaultArgs,
+    globalInfo.defaultArgs,
     nameCommands
   );
 
@@ -387,7 +393,7 @@ async function deployPGREST(userDefaultArgs: string[]) {
   return;
 }
 
-async function deployAuth(userDefaultArgs: string[]) {
+async function deployAuth() {
   let authName;
   if (!options.yes) {
     authName = await input({
@@ -405,7 +411,7 @@ async function deployAuth(userDefaultArgs: string[]) {
   // create array of commands
   const authLaunchCommandArray = ["launch"].concat(
     launchDefaultArgs,
-    userDefaultArgs,
+    globalInfo.defaultArgs,
     nameCommands
   );
   // run fly launch --no-deploy to allocate app
@@ -600,18 +606,6 @@ async function execAsyncLog(spawn: ChildProcessWithoutNullStreams) {
     response += data.toString();
   }
   return response;
-}
-
-async function flyAuth() {
-  const authSpinner = ora({
-    text: `Checking fly cli authorization...`,
-    color: "yellow",
-  }).start();
-
-  // grab username
-  globalInfo.username = await userAuth(options, authSpinner);
-  authSpinner.stop();
-  console.log("Deploying to fly.io as:", chalk.green(globalInfo.username));
 }
 
 async function flyLaunchDeployInternalIPV6(
