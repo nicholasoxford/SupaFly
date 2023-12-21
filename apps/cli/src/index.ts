@@ -164,38 +164,6 @@ async function whoami() {
   return await execAsync(whoamiSpawn);
 }
 
-async function choseDefaultRegions() {
-  let options = [
-    {
-      city: "",
-      code: "",
-    },
-  ];
-  const regionsSpawn = spawn("fly", ["platform", "regions"]);
-  const regions = await execAsync(regionsSpawn);
-  const regionChoices = regions.split("\n").slice(1);
-  for (let i = 0; i < regionChoices.length; i++) {
-    const infoArray = regionChoices[i].split(`\t`);
-    if (infoArray[1] && infoArray[0]) {
-      options.push({
-        city: infoArray[0].trim(),
-        code: infoArray[1].trim(),
-      });
-    }
-  }
-  options = options.filter((o) => o.city !== "");
-
-  return await select({
-    message: "Select a default region",
-    choices: options.map((o) => {
-      return {
-        name: o.city + " - " + o.code,
-        value: o.code,
-      };
-    }),
-  });
-}
-
 // Fly io specific functions
 //Deploying postgres-meta
 async function deployPGMeta() {
@@ -636,10 +604,42 @@ async function flyLaunchDeployInternalIPV6(
 }
 
 async function flySetDefaultRegion() {
+  // if no region is passed in as an option, we need to prompt them
   if (!global.defaultRegion) {
-    global.defaultRegion = await choseDefaultRegions();
-  }
+    let regionOptions = [
+      {
+        city: "",
+        code: "",
+      },
+    ];
 
+    // Cal fly io to get list of regions
+    const regionsSpawn = spawn("fly", ["platform", "regions"]);
+    const regionChoices = (await execAsync(regionsSpawn)).split("\n").slice(1);
+    for (let i = 0; i < regionChoices.length; i++) {
+      const infoArray = regionChoices[i].split(`\t`);
+      if (infoArray[1] && infoArray[0]) {
+        regionOptions.push({
+          city: infoArray[0].trim(),
+          code: infoArray[1].trim(),
+        });
+      }
+    }
+
+    // filter out the empty values
+    regionOptions = regionOptions.filter((o) => o.city !== "");
+
+    // prompt the user to select a region
+    global.defaultRegion = await select({
+      message: "Select a default region",
+      choices: regionOptions.map((o) => {
+        return {
+          name: o.city + " - " + o.code,
+          value: o.code,
+        };
+      }),
+    });
+  }
   console.log("Deploying to region:", chalk.green(global.defaultRegion));
 }
 
