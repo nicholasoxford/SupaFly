@@ -2,10 +2,10 @@
 
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import figlet from "figlet";
-import { Command, OptionValues } from "commander";
+import { Command } from "commander";
 import { select, confirm, input } from "@inquirer/prompts";
 import chalk from "chalk";
-import ora, { Ora } from "ora";
+import ora from "ora";
 import njwt from "njwt";
 import secureRandom from "secure-random";
 import { readFile, writeFile } from "fs/promises";
@@ -28,7 +28,7 @@ const options = program.opts<cliInput>();
 let global: GlobalInfo = {
   username: "",
   defaultRegion: options.region ?? "",
-  organization: "",
+  organization: options.org ?? "",
   jwtTokens: {
     anonToken: "",
     serviceToken: "",
@@ -55,6 +55,7 @@ let global: GlobalInfo = {
     publicUrl: "",
   },
   defaultArgs: [],
+  directory: options.dir ?? "",
   dbPath: "src/database",
   pgRestPath: "src/pg-rest",
   authPath: "src/auth",
@@ -62,6 +63,7 @@ let global: GlobalInfo = {
   kongPath: "src/kong",
   metaPath: "src/pg-meta",
   yes: Boolean(options.yes),
+  FLY_API_TOKEN: "",
 };
 
 main();
@@ -74,6 +76,8 @@ async function main() {
 
   // check if fly cli is authenticated
   await flyAuth();
+
+  await createDirectories();
 
   // chose default region if not passed in
   await flySetDefaultRegion();
@@ -145,7 +149,16 @@ async function flyAuth() {
     process.exit(1);
   }
   global.username = username;
+  getFlyApiToken();
   console.log("Deploying to fly.io as:", chalk.green(global.username));
+}
+
+async function getFlyApiToken() {
+  // call fly auth token
+  // set global variable
+  const tokenCommand = spawn("fly", ["auth", "token"]);
+  const token = await execAsync(tokenCommand);
+  global.FLY_API_TOKEN = token;
 }
 
 // Create default cli args like org and region to make life easier
@@ -160,6 +173,10 @@ async function flyLogin() {
   return await execAsync(flyLoginSpawn);
 }
 
+/**
+ *
+ * @returns username or email of the currently logged in fly user
+ */
 async function whoami() {
   const whoamiSpawn = spawn("fly", ["auth", "whoami"]);
   return await execAsync(whoamiSpawn);
@@ -604,6 +621,39 @@ async function flyLaunchDeployInternalIPV6(
   return await getInternalIPV6Address(path);
 }
 
+async function createDirectories() {
+  if (!global.directory) {
+    const directoryAction = await select({
+      message: "Save or delete Dockerfiles and fly configuration files?",
+      choices: [
+        {
+          name: "📁 Create a permanent directory for Dockerfile and fly.toml",
+          value: "create",
+        },
+        {
+          name: chalk.red(
+            "🗑️  Delete all Dockerfiles and fly configuration files after deployment"
+          ),
+          value: "delete",
+        },
+      ],
+      default: "create",
+    });
+    if (directoryAction === "create") {
+      global.directory = await input({
+        message: "Enter a name for your directory",
+        default: "supafly",
+      });
+    } else if (directoryAction === "delete") {
+      global.directory = "./temp-supafly";
+    }
+
+    // make directory with name global.directory
+    const mkdir = spawn("mkdir", [global.directory]);
+    await execAsync(mkdir);
+  }
+}
+
 async function flySetDefaultRegion() {
   // if no region is passed in as an option, we need to prompt them
   if (!global.defaultRegion) {
@@ -941,12 +991,14 @@ type GlobalInfo = {
   };
   defaultArgs: string[];
   dbPath: string;
+  directory: string;
   pgRestPath: string;
   authPath: string;
   studioPath: string;
   kongPath: string;
   metaPath: string;
   yes?: boolean;
+  FLY_API_TOKEN: string;
 };
 
 type serviceInfo = {
@@ -955,6 +1007,7 @@ type serviceInfo = {
 };
 
 type cliInput = {
+  dir?: string;
   org?: string;
   region?: string;
   dbUrl?: string;
