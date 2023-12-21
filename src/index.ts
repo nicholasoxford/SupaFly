@@ -15,11 +15,12 @@ import { generate } from "random-words";
 const program = new Command();
 program
   .version("0.0.1")
-  .description("Deploy Supbase to Fly.io")
-  .option("-O, --org  [value]", "Fly.io Target Organization")
-  .option("-y, --yes", "Skip prompts and deploy")
-  .option("-r, --region [value]", "Fly.io Target Region")
-  .option("--dbUrl [value]", "Existing Database URL")
+  .description("🚀 Deploy Supabase to Fly.io 🌐")
+  .option("-O, --org  [value]", "🎯 Fly.io Target Organization")
+  .option("-y, --yes", "✅ Skip prompts and deploy")
+  .option("-r, --region [value]", "🌍 Fly.io Target Region")
+  .option("--dbUrl [value]", "🔗 Existing Database URL")
+  .option("-d, --dir [value]", "📁 Specify the directory for deployment")
   .parse(process.argv);
 const options = program.opts<cliInput>();
 
