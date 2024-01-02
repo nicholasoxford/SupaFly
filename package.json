@@ -1,10 +1,14 @@
 {
   "name": "supafly",
   "version": "1.0.9",
-  "description": "",
-  "keywords": [],
+  "description": "Supafly is a CLI tool for deploying Supabase to fly.io",
+  "keywords": [
+    "supabase",
+    "fly.io",
+    "supafly"
+  ],
   "license": "ISC",
-  "author": "",
+  "author": "@nicholsaoxford",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

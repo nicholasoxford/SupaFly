@@ -16,11 +16,11 @@ const program = new Command();
 program
   .version("0.0.1")
   .description("🚀 Deploy Supabase to Fly.io 🌐")
+  .option("-d, --dir [value]", "📁 Specify the directory for deployment")
   .option("-O, --org  [value]", "🎯 Fly.io Target Organization")
-  .option("-y, --yes", "✅ Skip prompts and deploy")
   .option("-r, --region [value]", "🌍 Fly.io Target Region")
   .option("--dbUrl [value]", "🔗 Existing Database URL")
-  .option("-d, --dir [value]", "📁 Specify the directory for deployment")
+  .option("-y, --yes", "✅ Skip prompts and deploy")
   .parse(process.argv);
 const options = program.opts<cliInput>();
 
@@ -652,6 +652,61 @@ async function createDirectories() {
     const mkdir = spawn("mkdir", [global.directory]);
     await execAsync(mkdir);
   }
+}
+
+async function copyFilesToDirectory() {
+  // mkdir for auth, database, kong, pg-rest, studio, and pg-meta
+  const mkdirAuthPromise = execAsync(
+    spawn("mkdir", [global.directory + "/auth"])
+  );
+  const mkdirDatabasePromise = execAsync(
+    spawn("mkdir", [global.directory + "/database"])
+  );
+  const mkdirKongPromise = execAsync(
+    spawn("mkdir", [global.directory + "/kong"])
+  );
+  const mkdirPgRestPromise = execAsync(
+    spawn("mkdir", [global.directory + "/pg-rest"])
+  );
+  const mkdirStudioPromise = execAsync(
+    spawn("mkdir", [global.directory + "/studio"])
+  );
+  const mkdirPgMetaPromise = execAsync(
+    spawn("mkdir", [global.directory + "/pg-meta"])
+  );
+  await Promise.all([
+    mkdirAuthPromise,
+    mkdirDatabasePromise,
+    mkdirKongPromise,
+    mkdirPgRestPromise,
+    mkdirStudioPromise,
+    mkdirPgMetaPromise,
+  ]);
+
+  // copy files to directory
+  const cpAuthPromise = execAsync(
+    spawn("cp", ["./src/auth/*", global.directory + "/auth"])
+  );
+  const cpDatabasePromise = execAsync(
+    spawn("cp", ["./src/database/*", global.directory + "/database"])
+  );
+  const cpKongPromise = execAsync(
+    spawn("cp", ["./src/kong/*", global.directory + "/kong"])
+  );
+  const cpPgRestPromise = execAsync(
+    spawn("cp", ["./src/pg-rest/*", global.directory + "/pg-rest"])
+  );
+  const cpStudioPromise = execAsync(
+    spawn("cp", ["./src/studio/*", global.directory + "/studio"])
+  );
+
+  await Promise.all([
+    cpAuthPromise,
+    cpDatabasePromise,
+    cpKongPromise,
+    cpPgRestPromise,
+    cpStudioPromise,
+  ]);
 }
 
 async function flySetDefaultRegion() {
