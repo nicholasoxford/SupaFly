@@ -1,6 +1,6 @@
 {
   "name": "supafly",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Supafly is a CLI tool for deploying Supabase to fly.io",
   "keywords": [
     "supabase",
@@ -25,7 +25,7 @@
     "src/studio/Dockerfile"
   ],
   "scripts": {
-    "build": "npx tsc",
+    "build": "bun build src/index.ts --target=node --outfile=dist/index.js",
     "start": "bun dist/index.js",
     "skip": "bun src/index.ts -y -r lax --org supabased ",
     "dev": "bun --watch src/index.ts",
